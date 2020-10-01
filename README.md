@@ -1,5 +1,6 @@
 # Webhookr
 https://hastebin.com/tikiwobabo
+
 1 - wb @user {message (optional)} ---> returns webhook of mentioned user with the specified message/ a random mimic message
 
 2 - wb i add {desired webhook name}
