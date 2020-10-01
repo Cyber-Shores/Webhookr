@@ -1,0 +1,119 @@
+Look in the examples folder if you like examples.
+Everything covered here can be seen in that folder. 
+NOTE: your imports wont have the same file paths, but they will have the same variables
+
+To use this framework you must have Typescript installed
+(it would be best if you installed typescript node dev, its basically nodemon for typescript)
+(to run using typescript node dev: tsnd --respawn {path to index}.ts )
+
+First, create a file that is going to be the starting of your project.
+In that file:
+    import Machinam extractClasses from machina.ts 
+    import arrify from machina.ts (optional, but recommended)
+
+    import dotenv and run the config function (optional, but recommended if you are about token safety)
+
+    Create an instance of the Machina class. The arguments go token (env file's token), prefix, {your username, your icon}
+        For simplicity, I will refer to that instance as Hash
+
+    IF USING CLASS FORMAT: 
+        Use loadClasses on that instance to load the commands. Ex: Hash.loadClasses(extractClasses("file", "general.ts"))
+            You can load them how you want, but you should use extractClasses from machinaUtility
+    IF USING NON-CLASS FORMAT:
+        Use loadCommands on that instance to laod the commands. The commands should be of type MachinaFunction
+ 
+    Use initialize on that instance to start the bot. Ex. Hash.initialize()
+        This is where you would start things like mongodb or anything else 
+
+    Now you are done! (for the basics)
+
+    If you want access to the client, do Hash.client (this is where you would listen to message, etc)
+
+Listen for messages Example (in starting file):
+    Create a listener for message on the client 
+    Ex: Hash.client.on("message", msg => {})
+
+    Inside that anonymous function:
+        If you want to evaluate the message and check for commands run this:
+            const cmd = Hash.evaluateMsg(msg)
+                The variable name doesnt matter, but for clarity it will be called cmd. 
+    
+        cmd has three properties: reason, value, and extra
+        Extra is extra information, not really important
+        Value is the commands found 
+        Reason is the status. This tells you if the user failed authroization, if there were no commands found, etc.
+
+        Its recommended that you check for "no commands available" and "permission check passed mutliple" (mutliple commands found)
+            There are static functions on the machina class that can help with that: Machina.noCommands() and Machina.mutlipleCommands()
+                Make sure to put the correct arguments inside them
+        To run the command simply run it and pass in the instance of the Machina class and the msg.
+    
+    This is an example of what it could look like:
+    Hash.client.on("message", async msg => {
+        let cmd = Hash.evaluateMsg(msg)
+        if(cmd.reason == "no commands available")
+            return Machina.noCommands(msg, cmd.extra)
+        if(cmd.reason == "permission check passed multiple")
+            return Machina.multipleCommands(msg, arrify(cmd.value))
+        if(cmd.value)
+            arrify(cmd.value)?.forEach(f => f(Hash, msg))
+    })
+
+Creating commands using class format:
+
+    Create a class of any name and export it 
+    Ex: export class General {}
+
+    In that class: 
+        To create an indivual command use this format:
+            @machinaDecoratorInfo({monikers: /* what the user will write to call your commnad*/, description: /* the description of the command */, ...}) // To get more information about the arguments for this command, look in machinaFunction.ts
+            static /* name of function */: MachinaFunction = /* put async here if you need it */ (params: MachinaFunctionParameters) => {
+                // this is where your code will go 
+            }
+
+            In the example above, make sure monikers is a list and you put that in. Also, make sure you put a description. There are more options that you can add, such as arguments. 
+            Replace name of function with the name of the function 
+
+            params has a couple properties that include: info, Bot, msg, args, and argsInfo.
+            info is the information given to the command (the info in the machinaDecoratorInfo)
+            Bot is the instance of the bot (the Machina object)
+            msg is the discord msg (the type is Discord.Message)
+            args is a list of arguments that the user inputted (the type is MachianArgsTypes[])
+            argsInfo is the information about the arguments (if you put any arguments in machinaDecoratorInfo also the type is MachinaArgsInfo)
+                The structure of argsInfo is kinda complicated, so here is a break down
+                    value: true/false - did the user follow the arguments
+                    extra: number - the index of the argument like if it matches the first argument ([ this one -> [...],[...],[...]]). then it would be 0, the second would be 1, etc.
+                        Note that it can match single arguments as well as lists of arguments
+                    results: {expected: what it wants, received: what the user put, result} (this is in 1 array if you dont have any lists of arguments, else it has another level)
+                    extraResults: list of added arguments that the user put 
+            
+    Example of that file:
+    // Start
+    /* pretend the imports are here */
+    export class General {
+        @machinaDecoratorInfo({monikers: ["test"], description: "a simple test that sends hello"})
+        static test: MachinaFunction = async (params: MachinaFunctionParameters) => {
+            console.log("Sending Test Message")
+            await new MachinaMessage({title: "Test", description: "A test", params.msg}).send()
+            console.laod("Test Message has been sent")
+        }
+
+        // imagine the top thing but multiple times with different stuff cause they are different commands
+    }
+    // End 
+
+    If you dont know how to load this, all you need to do is Hash.loadClass(extractClasses("file", "general.ts")) in your main file
+        Replace Hash with the name of your bot instance (of Machina), and replace general.ts with the file name.
+
+Creating commands in a non class format:
+    If you are doing it this way, ill assume that you know how things work but you dont know how decorators work in particular
+    If you are a beginnner, you should use the class method
+
+    In the file that you are going to have your commands in, all you need to do is this:
+    export const /* name of function */: MachinaFunction = machinaDecoratorInfo({monikers: /* what the user will write to call your commnad*/, description: /* the description of the command */, ...})
+    ("Class Name", "Name of funciton", /* put async here if you need it */ (params: MachinaFunctionParameters) => {
+        // this is where your code will go 
+    })
+
+
+If you have any questions, comments, or concerns dont be afraid to message me or create a github issue!

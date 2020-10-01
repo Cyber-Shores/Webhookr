@@ -1,5 +1,6 @@
 # Webhookr
-https://hastebin.com/tikiwobabo
+
+<https://hastebin.com/tikiwobabo>
 
 1 - wb @user {message (optional)} ---> returns webhook of mentioned user with the specified message/ a random mimic message
 
@@ -35,5 +36,5 @@ there will be a max of 10 webhook names in an embed and a reaction arrow key rig
  this will select a random user of the server and mimic them.
  if the user cannot be mimcked, it will return a few preset statements like [I like giraffes, This bot is awesome etc etc]
 
-8 - wb mimic yes/no true/false active/deactivate 
+8 - wb mimic yes/no true/false active/deactivate
 the user should be able to prevent being mimicked by other users, since everyone is not comfortable with it
