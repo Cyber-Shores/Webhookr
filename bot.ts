@@ -37,31 +37,39 @@ Bot.client.on('ready', async () => {
 Bot.client.on('message', async msg => {
     if(msg.author.bot) return;
     if(msg.channel.type === 'dm') return;
-    let command = Bot.evaluateMsg(msg);
-    if(command.reason == "no commands available") {
-        let hook = (await msg.guild.fetchWebhooks()).find(w => w.owner == Bot.client.user);
-        if(!hook){
-            hook = await msg.channel.createWebhook('Webhookr Proxy Hook');
+    try {
+        let command = Bot.evaluateMsg(msg);
+        if(command.reason == "no commands available") {
+            msg.delete();
+            console.log(`Extras: ${command.extra}`)
+            let hook = (await msg.guild.fetchWebhooks()).find(w => w.owner == Bot.client.user);
+            if(!hook){
+                hook = await msg.channel.createWebhook('Webhookr Proxy Hook');
+            }
+            let args = command.extra.split(' ');
+            let user = msg.mentions.members.first() || (!args[0] ? null : (await msg.guild.members.fetch({query: args[0], limit: 1})).array()[0]) || msg.member;
+            if(!args[1]) {
+                let msgArr = msg.channel.messages.cache.filter(m => m.author == user.user).array();
+                let randMsg = msgArr[Math.floor(Math.random()*msgArr.length)]
+                hook.edit({ channel: msg.channel.id }).then(w => w.send(randMsg, { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
+            }
+            else
+                console.log(`Sent: ${args.slice(1).join(' ').trim()}`)
+                hook.edit({ channel: msg.channel.id }).then(w => w.send(args.slice(1).join(' ').trim(), { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
+            //return Machina.noCommands(msg, command.extra)
         }
-        let args = command.extra.split(' ');
-        let user = msg.mentions.members.first() || (!args[0] ? null : (await msg.guild.members.fetch({query: args[0], limit: 1})).array()[0]) || msg.member;
-        if(!args[1]) {
-            let msgArr = msg.channel.messages.cache.filter(m => m.author == user.user).array();
-            let randMsg = msgArr[Math.floor(Math.random()*msgArr.length)]
-            hook.edit({ channel: msg.channel.id }).then(w => w.send(randMsg, { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
+        else if(command.reason == "permission check passed multiple")
+            return Machina.multipleCommands(msg, arrify(command.value))
+    
+        if(command.value) {
+            let hook = (await msg.guild.fetchWebhooks()).find(w => w.owner == Bot.client.user);
+            if(!hook){
+                msg.channel.createWebhook('Webhookr Proxy Hook');
+            }
+            arrify(command.value).forEach(f => f(Bot, msg));
         }
-        else
-            hook.edit({ channel: msg.channel.id }).then(w => w.send(args.slice(1).join(' '), { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
-        //return Machina.noCommands(msg, command.extra)
     }
-    else if(command.reason == "permission check passed multiple")
-        return Machina.multipleCommands(msg, arrify(command.value))
-
-    if(command.value) {
-        let hook = (await msg.guild.fetchWebhooks()).find(w => w.owner == Bot.client.user);
-        if(!hook){
-            msg.channel.createWebhook('Webhookr Proxy Hook');
-        }
-        arrify(command.value).forEach(f => f(Bot, msg));
+    catch(e) {
+        console.log(e.stack);
     }
 })
