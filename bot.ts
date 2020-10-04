@@ -2,6 +2,7 @@ import { Machina, extractClasses, arrify, MachinaFunction, MachinaMessage } from
 const Bot = new Machina("NzYxMzQwMzk2NjM4ODMwNjI0.X3ZLfw.-50Ch3C_A0sbp1qyoE1C1U2mRFo", "wb ");
 import { Message, MessageEmbed, TextChannel } from 'discord.js';
 import fs = require('fs');
+const mongoose = require('mongoose');
 
 // fs.readdir('./cmd/', (err, files) => {
 //     if(err) console.error(err);
@@ -21,6 +22,11 @@ import fs = require('fs');
 //     });
 // });
 
+mongoose.connect("mongodb+srv://admin:12KuxLmPkYlptxj3@cluster0.h4bxo.mongodb.net/webhookrdb?retryWrites=true&w=majority", {
+    useNewUrlParser: true,
+    useFindAndModify: false,
+    useUnifiedTopology: true
+});
 Bot.loadCommands(...(Object.values(require("./commands.ts")) as MachinaFunction[]));
 Bot.initizalize();
 
