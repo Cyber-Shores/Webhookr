@@ -1,6 +1,6 @@
 import { Machina, extractClasses, arrify, MachinaFunction, MachinaMessage } from "machina.ts";
 const Bot = new Machina("NzYxMzQwMzk2NjM4ODMwNjI0.X3ZLfw.-50Ch3C_A0sbp1qyoE1C1U2mRFo", "wb ");
-import { Message, MessageEmbed, TextChannel } from 'discord.js';
+import { GuildMember, Message, MessageEmbed, TextChannel } from 'discord.js';
 import fs = require('fs');
 const mongoose = require('mongoose');
 
@@ -47,20 +47,29 @@ Bot.client.on('message', async msg => {
         let command = Bot.evaluateMsg(msg);
         if(command.reason == "no commands available") {
             msg.delete();
-            console.log(`Extras: ${command.extra}`)
+            // console.log(`Extras: ${command.extra}`)
             let hook = (await msg.guild.fetchWebhooks()).find(w => w.owner == Bot.client.user);
             if(!hook){
                 hook = await msg.channel.createWebhook('Webhookr Proxy Hook');
             }
             let args = command.extra.split(' ');
-            let user = msg.mentions.members.first() || (!args[0] ? null : (await msg.guild.members.fetch({query: args[0], limit: 1})).array()[0]) || msg.member;
-            if(!args[1]) {
+            let user: GuildMember;
+            if(args[0] == 'wb')
+                user = msg.member;
+            else
+                user = msg.mentions.members.first() || (!args[0] ? null : (await msg.guild.members.fetch({query: args[0], limit: 1})).array()[0]) || msg.member;
+            // console.log(`Extras 2: ${command.extra}`)
+            if(args[1] == undefined) {
                 let msgArr = msg.channel.messages.cache.filter(m => m.author == user.user).array();
+                // console.log(`DEBUG - msgArr: ${msgArr}`);
+                // console.log(`DEBUG - user: ${user}`);
+                // console.log(`DEBUG - msgArr: ${msgArr}`);
                 let randMsg = msgArr[Math.floor(Math.random()*msgArr.length)]
+                // console.log(`DEBUG - randMsg: ${randMsg}`);
                 hook.edit({ channel: msg.channel.id }).then(w => w.send(randMsg, { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
             }
             else
-                console.log(`Sent: ${args.slice(1).join(' ').trim()}`)
+                // console.log(`Sent: ${args.slice(1).join(' ').trim()}`)
                 hook.edit({ channel: msg.channel.id }).then(w => w.send(args.slice(1).join(' ').trim(), { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
             //return Machina.noCommands(msg, command.extra)
         }

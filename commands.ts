@@ -13,7 +13,7 @@ function validURL(str) {
     return !!pattern.test(str);
 }
 
-export const embed: MachinaFunction = machinaDecoratorInfo
+export const add: MachinaFunction = machinaDecoratorInfo
 ({monikers: ["add"], description: "adds a webhook to users inventory"})
 ("webhook-commands", "add", async (params: MachinaFunctionParameters) => {
     // console.log(`DEBUG - args: ${params.args}`);
@@ -62,4 +62,17 @@ export const embed: MachinaFunction = machinaDecoratorInfo
             }
         }))
     }
+});
+
+export const remove: MachinaFunction = machinaDecoratorInfo
+({monikers: ["remove"], description: "removes a webhook from users inventory"})
+("webhook-commands", "remove", async (params: MachinaFunctionParameters) => {
+    let req = await Persona.findOne({ id: params.msg.author.id, name: params.args[0] });
+    if(!req) {
+        return params.msg.channel.send("```Could not find that persona.```")
+    }
+    Persona.deleteOne({ id: params.msg.author.id, name: params.args[0] }, function (err: any) {
+        if(err) params.msg.channel.send("```Oops! Error occured persona could not be deleted.```");
+        return params.msg.channel.send("```Successfuly deleted!```")
+    })
 });
