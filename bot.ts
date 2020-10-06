@@ -53,6 +53,7 @@ Bot.client.on('message', async msg => {
                 hook = await msg.channel.createWebhook('Webhookr Proxy Hook');
             }
             let args = command.extra.split(' ');
+            if(args[0] == 'stop') return;
             let user: GuildMember;
             if(args[0] == 'wb')
                 user = msg.member;
@@ -66,7 +67,7 @@ Bot.client.on('message', async msg => {
                 // console.log(`DEBUG - msgArr: ${msgArr}`);
                 let randMsg = msgArr[Math.floor(Math.random()*msgArr.length)]
                 // console.log(`DEBUG - randMsg: ${randMsg}`);
-                hook.edit({ channel: msg.channel.id }).then(w => w.send(randMsg, { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
+                hook.edit({ channel: msg.channel.id }).then(w => w.send(randMsg || "Hello! :D", { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
             }
             else
                 // console.log(`Sent: ${args.slice(1).join(' ').trim()}`)
