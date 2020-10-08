@@ -43,6 +43,35 @@ module.exports.run = async (client, msg, args) => {
         });
         msg.channel.send(`Count: | ${req.length} |\ Personas Names: | ${personas.toString()} |`)
 
+    }else if(args[0] == "preference"){
+        let req = await Guild.findOne({ id: msg.author.id })
+        //Logging for debug
+        // console.log(req)
+        //Test for args
+        if(!args[1]) {
+            //get mimick state if no args
+            if(req != null){
+                return msg.channel.send(`Mimickable state: ${req.mimickable}`)
+            }
+            //Create doc if no req
+            const doc = new Guild({ id: msg.author.id });
+            await doc.save();
+            return msg.channel.send("Your document has been created with default values.")
+        }
+        //save args[1] to variable
+        var prefrence = args[1]
+        if(args[1] != "true" && args[1] != "false") return msg.channel.send("The only two allowed inputs for preferences are `true` or `false`") 
+        //Test if current document exists
+        if(req == null) {
+            //Create document with peramaters filled
+            const doc = new Guild({ id: msg.author.id, mimickable: prefrence });
+            //Save doc... Duh
+            await doc.save();
+            return msg.channel.send("Your document has been updated!")
+        }else{
+            await Guild.findOneAndUpdate({ id: msg.author.id }, { $set: { mimickable: prefrence } }, { new: true });
+            return msg.channel.send(`Prefrence updated to: ${prefrence}`);
+        }
     }
 
     

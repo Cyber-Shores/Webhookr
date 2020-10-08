@@ -32,9 +32,9 @@ finished? 6 - wb i
  this will return the user's inventory in an embed
 there will be a max of 10 webhook names in an embed and a reaction arrow key right and left to navigate through more
 
-7 - wb rand/ wb random {message (optional)}
+finished 7 - wb rand/ wb random {message (optional)}
  this will select a random user of the server and mimic them.
  if the user cannot be mimcked, it will return a few preset statements like [I like giraffes, This bot is awesome etc etc]
 
-8 - wb mimic yes/no true/false active/deactivate
+finished 8 - wb mimic yes/no true/false active/deactivate
 the user should be able to prevent being mimicked by other users, since everyone is not comfortable with it

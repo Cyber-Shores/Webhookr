@@ -1,4 +1,3 @@
-const { MessageAttachment } = require('discord.js');
 const { Schema, model } = require('mongoose');
 
 const Persona = Schema({

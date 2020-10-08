@@ -3,6 +3,7 @@ const Bot = new Machina("NzYxMzQwMzk2NjM4ODMwNjI0.X3ZLfw.-50Ch3C_A0sbp1qyoE1C1U2
 import { GuildMember, Message, MessageEmbed, TextChannel } from 'discord.js';
 import fs = require('fs');
 const mongoose = require('mongoose');
+const Guild = require('./models/Guild');
 
 // fs.readdir('./cmd/', (err, files) => {
 //     if(err) console.error(err);
@@ -46,7 +47,6 @@ Bot.client.on('message', async msg => {
     try {
         let command = Bot.evaluateMsg(msg);
         if(command.reason == "no commands available") {
-            msg.delete();
             // console.log(`Extras: ${command.extra}`)
             let hook = (await msg.guild.fetchWebhooks()).find(w => w.owner == Bot.client.user);
             if(!hook){
@@ -59,20 +59,16 @@ Bot.client.on('message', async msg => {
                 user = msg.member;
             else
                 user = msg.mentions.members.first() || (!args[0] ? null : (await msg.guild.members.fetch({query: args[0], limit: 1})).array()[0]) || msg.member;
-            // console.log(`Extras 2: ${command.extra}`)
-            if(args[1] == undefined) {
-                let msgArr = msg.channel.messages.cache.filter(m => m.author == user.user).array();
-                // console.log(`DEBUG - msgArr: ${msgArr}`);
-                // console.log(`DEBUG - user: ${user}`);
-                // console.log(`DEBUG - msgArr: ${msgArr}`);
+            let req = await Guild.findOne({ id: user.user.id });
+            if(req != null && !req.mimickable) return msg.channel.send(`\`\`\`User "${user.user.username}" has mimicking turned off\`\`\``)
+            if(args[1] == undefined && msg.attachments.size == 0) {
+                let msgArr = msg.channel.messages.cache.filter(m => m.author == user.user && !m.content.startsWith("wb")).array();
                 let randMsg = msgArr[Math.floor(Math.random()*msgArr.length)]
-                // console.log(`DEBUG - randMsg: ${randMsg}`);
-                hook.edit({ channel: msg.channel.id }).then(w => w.send(randMsg || "Hello! :D", { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
+                await hook.edit({ channel: msg.channel.id }).then(w => w.send(randMsg || "Hello! :D", { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
             }
             else
-                // console.log(`Sent: ${args.slice(1).join(' ').trim()}`)
-                hook.edit({ channel: msg.channel.id }).then(w => w.send(args.slice(1).join(' ').trim(), { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
-            //return Machina.noCommands(msg, command.extra)
+                await hook.edit({ channel: msg.channel.id }).then(w => w.send(args.slice(1).join(' ').trim(), { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
+            msg.delete();
         }
         else if(command.reason == "permission check passed multiple")
             return Machina.multipleCommands(msg, arrify(command.value))

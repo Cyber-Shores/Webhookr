@@ -1,9 +1,11 @@
 import { createHook } from 'async_hooks';
+import { SSL_OP_EPHEMERAL_RSA } from 'constants';
 import { Collection, TextChannel, MessageEmbed, Message, MessageAttachment, BufferResolvable, ClientUser, GuildMember } from 'discord.js';
 import { machinaDecoratorInfo, MachinaFunction, MachinaFunctionParameters, MachinaMessage } from "machina.ts";
 import { Document } from 'mongoose';
 import { listenerCount } from 'process';
 const Persona = module.require('./models/Persona');
+const Guild = module.require('./models/Guild');
 
 function validURL(str) {
     var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
@@ -91,12 +93,10 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
             params.msg.channel.send("```The bot will now begin relaying your messages ```")
             collector.on('collect', async message => {
                 if(message.content == 'wb stop') return collector.stop();
-                // if(message.content.startsWith('{') && message.content.endsWith('}')) {
-        
-                // }
-                message.delete();
+                
                 let hook = (await message.guild.fetchWebhooks()).find(w => w.owner == params.Bot.client.user);
-                hook.edit({ channel: message.channel.id }).then(w => w.send(message.content, { username: req.name, avatarURL: req.image, files: message.attachments.array() }));
+                await hook.edit({ channel: message.channel.id }).then(w => w.send(message.content, { username: req.name, avatarURL: req.image, files: message.attachments.array() }));
+                message.delete();
             });
         })
     ]
@@ -121,28 +121,125 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
         });
         await params.msg.channel.send(embed);
     }else{
+        if(!params.args.slice(1, params.args.length).join(" ") && params.msg.attachments.size == 0) return params.msg.channel.send("```Cannot send an empty message```")
         let req = await Persona.findOne({ id: params.msg.author.id, name: params.args[0] });
         if(!req) {
-            return params.msg.channel.send("Could not find the persona")
+            let personas = []
+            await Persona.find({ id: params.msg.author.id }).then(p => p.forEach(doc => {
+                personas.push(doc)
+            }));
+            if(!personas[(params.args[0] as number)-1]) return params.msg.channel.send("Could not find the persona");
+            req = personas[(params.args[0] as number)-1];
         }
         let hook = (await params.msg.guild.fetchWebhooks()).find(w => w.owner == params.Bot.client.user);
+        await hook.edit({ channel: params.msg.channel.id }).then(w => w.send(params.args.slice(1, params.args.length).join(" "), { username: req.name, avatarURL: req.image, files: params.msg.attachments.array()}));
         params.msg.delete();
-        hook.edit({ channel: params.msg.channel.id }).then(w => w.send(params.args.slice(1, params.args.length).join(" ") || "Hello! :D", { username: req.name, avatarURL: req.image, files: params.msg.attachments.array() }));
     }
 });
 
 export const random: MachinaFunction = machinaDecoratorInfo
 ({monikers: ["rand", "random"], description: "mimics a random person in the server"})
 ("webhook-commands", "random", async (params: MachinaFunctionParameters) => {
-    const user = (params.msg.guild.members.cache.random(1))[0];
+    // let users = [];
+    async function genUsers(mArr) {
+        const sleep = (waitTimeInMs) => new Promise(resolve => setTimeout(resolve, waitTimeInMs));
+        let users = [];
+        mArr.forEach(async m => {
+            let req = await Guild.findOne({ id: m.user.id });
+            if(req == null || req.mimickable) users.push(m);
+        })
+        await sleep(500);
+        return users;   
+    }
+    let users = await genUsers(params.msg.guild.members.cache.array());
+    // params.msg.guild.members.cache.array().forEach(async m => {
+
+    // })
+    if(users.length == 0) return params.msg.channel.send("```There are no mimicable users!```")
+    let user = users[Math.floor(Math.random()*users.length)];
     const hook = (await params.msg.guild.fetchWebhooks()).find(w => w.owner == params.Bot.client.user);
-    if(params.args[0] == undefined) {
-        let msgArr = params.msg.channel.messages.cache.filter(m => m.author == user.user).array();
+    if(params.args[0] == undefined && params.msg.attachments.size == 0) {
+        let msgArr = params.msg.channel.messages.cache.filter(m => m.author == user.user && !m.content.startsWith('wb')).array();
         let randMsg = msgArr[Math.floor(Math.random()*msgArr.length)]
-        hook.edit({ channel: params.msg.channel.id }).then(w => w.send(randMsg || "Hello! :D", { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: params.msg.attachments.array() }));
+        await hook.edit({ channel: params.msg.channel.id }).then(w => w.send(randMsg || "Hello! :D", { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: params.msg.attachments.array() }));
     }
     else
-        hook.edit({ channel: params.msg.channel.id }).then(w => w.send(params.args.slice(1).join(' ').trim(), { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: params.msg.attachments.array() }));
+        await hook.edit({ channel: params.msg.channel.id }).then(w => w.send(params.args.slice(1).join(' ').trim(), { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: params.msg.attachments.array() }));
+    params.msg.delete();
+});
+
+export const mimic: MachinaFunction = machinaDecoratorInfo
+({monikers: ["mimic"], description: "allows user to set whether or not they can be mimicked"})
+("webhook-commands", "mimic", async (params: MachinaFunctionParameters) => {
+    let req = await Guild.findOne({ id: params.msg.author.id })
+    if(params.args[0] == undefined) {
+        console.log("NO ARGS");
+        if(req != null){
+            return params.msg.channel.send(`\`\`\`Mimickable state: ${req.mimickable}\`\`\``)
+        }
+        const doc = new Guild({ id: params.msg.author.id });
+        await doc.save();
+        return params.msg.channel.send("```Your document has been created with default values.```")
+    }
+    console.log(typeof params.args[0]);
+    if(typeof params.args[0] != "boolean") return params.msg.channel.send('```The only two allowed inputs for preferences are "true" or "false" ```')
+    var prefrence = params.args[0]
+    if(req == null) {
+        const doc = new Guild({ id: params.msg.author.id, mimickable: prefrence });
+        await doc.save();
+        return params.msg.channel.send("```Your document has been updated!```")
+    }else{
+        await Guild.findOneAndUpdate({ id: params.msg.author.id }, { $set: { mimickable: prefrence } }, { new: true });
+        return params.msg.channel.send(`\`\`\`Prefrence updated to: ${prefrence}\`\`\``);
+    }
+});
+
+export const help: MachinaFunction = machinaDecoratorInfo
+({monikers: ["help"], description: "displays the commands"})
+("webhook-commands", "help", async (params: MachinaFunctionParameters) => {
+    // let embed = new MachinaMessage({
+    //     title: "Commands:",
+    //     color: params.msg.member.displayHexColor,
+    //     description: 'Remove brackets "{}" when performing a command'
+    //     fields: [
+    //         {name: ''}
+    //     ]
+    // }, params.msg)
+    params.msg.channel.send(`\`\`\`
+    Commands and Usage:
+    wb {username, mention or "wb"} {message or nothing for random}
+    "wb ravenr hello! im ravenr!"
+    will send a provided message (random if not provided) using a webhook with the name and pfp of a given member
+
+    wb i
+    "wb i"
+    will display your inventory of Personas
+
+    wb i add {name of new Persona} {image or link}
+    "wb i add denton https://i.imgur.com/8zHiOK2.jpeg"
+    will create a Persona with the name  and pfp provided. If no image/link is provided, will wait 60 seconds for you to provide one in a message
+
+    wb i remove {name of Persona}
+    "wb i remove denton"
+    will remove the Persona with the provided name from your inventory
+
+    wb random {message or nothing for random}
+    "wb random hahahahah im so cool"
+    will pick a random person in the server and send a given message as them
+    
+    wb start {Persona to be used}
+    "wb start denton"
+    whenever you send a message in this channel, the bot will delete it and resend it as the provided Persona
+    to stop, type "wb stop"
+
+    wb mimic {true or false or nothing to check status}
+    "wb mimic false"
+    set whether or not you want others to be able to mimic you
+    
+    wb help
+    "wb help"
+    sends this help menu
+    \`\`\``)
 });
 
 // export const command: MachinaFunction = machinaDecoratorInfo
