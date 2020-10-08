@@ -223,6 +223,10 @@ export const help: MachinaFunction = machinaDecoratorInfo
     "wb i remove denton"
     will remove the Persona with the provided name from your inventory
 
+    wb i {name or number of Persona} {message}
+    "wb i denton hello!!"
+    will send your message as the chosen persona
+
     wb random {message or nothing for random}
     "wb random hahahahah im so cool"
     will pick a random person in the server and send a given message as them
