@@ -4,7 +4,8 @@ import { GuildMember, Message, MessageEmbed, TextChannel } from 'discord.js';
 import fs = require('fs');
 const mongoose = require('mongoose');
 const Guild = require('./models/Guild');
-
+const Markov = require('js-markov');
+let markov = new Markov();
 // fs.readdir('./cmd/', (err, files) => {
 //     if(err) console.error(err);
 
@@ -39,11 +40,14 @@ Bot.client.on('ready', async () => {
         console.log(e.stack);
     }
         console.log('Hello World!');
+
+    
 });
 
 Bot.client.on('message', async msg => {
     if(msg.author.bot) return;
     if(msg.channel.type === 'dm') return;
+    // if(!msg.content.startsWith("wb ")) markov.addStates(msg.content);
     try {
         let command = Bot.evaluateMsg(msg);
         if(command.reason == "no commands available") {
@@ -63,8 +67,15 @@ Bot.client.on('message', async msg => {
             if(req != null && !req.mimickable) return msg.channel.send(`\`\`\`User "${user.user.username}" has mimicking turned off\`\`\``)
             if(args[1] == undefined && msg.attachments.size == 0) {
                 let msgArr = msg.channel.messages.cache.filter(m => m.author == user.user && !m.content.startsWith("wb")).array();
-                let randMsg = msgArr[Math.floor(Math.random()*msgArr.length)]
-                await hook.edit({ channel: msg.channel.id }).then(w => w.send(randMsg || "Hello! :D", { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
+                let punctuation = ['.','...','?','!'][Math.floor(Math.random()*4)];
+                let sentenceArr = [];
+                msgArr.forEach(m => sentenceArr.push(m.content));
+                markov.clearState();
+                setTimeout(() => {}, 1000)
+                markov.addStates(sentenceArr);
+                markov.train();
+                await hook.edit({ channel: msg.channel.id }).then(w => w.send((markov.generateRandom(100) || "Hello")+punctuation, { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
+            
             }
             else
                 await hook.edit({ channel: msg.channel.id }).then(w => w.send(args.slice(1).join(' ').trim(), { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: msg.attachments.array() }));
