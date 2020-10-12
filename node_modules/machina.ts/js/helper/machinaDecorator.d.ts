@@ -26,4 +26,6 @@ export interface MachinaFunctionParameters {
     args: MachinaArgsTypes[];
     /** Information about the inputted argumets */
     argsInfo: MachinaArgsInfo;
+    /** Any extra stuff you want to pass into a Machina Function */
+    extra?: any;
 }
