@@ -62,7 +62,7 @@ export const extractClasses = (type: "file" | "files" | "dir", path: string | st
 export const convertArgType = (arg: string): MachinaArgsTypes => {
     if(arg.length == 0)
         return 
-    arg = arg.toLowerCase()
+    // arg = arg.toLowerCase()
     if(arg == "true" || arg == "false")
         return arg == "true"
     if(!isNaN(arg as any))

@@ -57,7 +57,7 @@ exports.extractClasses = (type, path, ignore = "") => {
 exports.convertArgType = (arg) => {
     if (arg.length == 0)
         return;
-    arg = arg.toLowerCase();
+    // arg = arg.toLowerCase()
     if (arg == "true" || arg == "false")
         return arg == "true";
     if (!isNaN(arg))

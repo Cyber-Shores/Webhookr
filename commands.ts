@@ -37,6 +37,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
         ("webhook-commands", "add", async (params: MachinaFunctionParameters) => {
             // console.log(`DEBUG - args: ${params.args}`);
             // console.log(`DEBUG - attach: ${params.msg.attachments.array()[0]}`);
+            if(params.args[0] == undefined) return params.msg.channel.send('```ERROR: Persona must have a name```');
             let req = await Persona.findOne({ id: params.msg.author.id, name: params.args[0] });
             if(req) {
                 return params.msg.channel.send("```Oops! this Persona already exists!```")
@@ -103,23 +104,59 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
 })
 ("webhook-commands", "inventory", async (params: MachinaFunctionParameters) => {
     if(params.args[0] == undefined) {
+        const MAX = 9;
         let personas = []
         let req = await Persona.find({ id: params.msg.author.id })
     
         req.forEach(doc => {
             personas.push(doc.name)
         });
-        let embed = new MessageEmbed({
-            title: `${params.msg.author.username}'s Webhook Inventory:`,
-            color: params.msg.member.displayHexColor,
-            description: `Total: ${req.length}`,
+        
+        let fields = [];
+        personas.forEach((p,i) => {
+            fields.push({ name: `${i+1}.`, value: p, inline: true});
         });
-    
-    
-        personas.forEach((p, i) => {
-            embed.addField(`${i+1}. `, p, true);
-        });
-        await params.msg.channel.send(embed);
+        let embeds = [];
+        for(let i = 0; i<=Math.floor(fields.length/MAX); i++) {
+            embeds[i] = new MessageEmbed({
+                title: `${params.msg.author.username}'s Webhook Inventory:`,
+                color: params.msg.member.displayHexColor,
+                description: `Total: ${req.length}`,
+                footer: {
+                    text: 'Menu Running!'
+                }
+            });
+            embeds[i].addFields(fields.slice(i*MAX,(MAX*(i+1)) || (fields.length+i*MAX)));
+        }
+
+        setTimeout(() => {}, 1000)
+        let menu = await params.msg.channel.send(embeds[0]);
+        if(fields.length>10) {
+            let count = 0;
+            const left = '◀️';
+            const right = '▶️';
+            menu.react(left).then(() => menu.react(right));
+            const collector = menu.createReactionCollector((reaction, user) => user == params.msg.author && (reaction.emoji.name == left || reaction.emoji.name == right), {time: 15000});
+            collector.on('collect', r => {
+                switch(r.emoji.name) {
+                    case left:
+                        if(count != 0) {
+                            count--;
+                            menu.edit(embeds[count]);
+                        }
+                        break;
+                    case right:
+                        if(count != embeds.length-1) {
+                            count++;
+                            menu.edit(embeds[count]);
+                        }
+                        break;
+                }
+                menu.reactions.removeAll().then(() => menu.react(left).then(() => menu.react(right)));
+            });
+            collector.on('end', () => menu.edit(menu.embeds[0].setFooter('Menu Closed!')));
+            
+        }
     }else{
         if(!params.args.slice(1, params.args.length).join(" ") && params.msg.attachments.size == 0) return params.msg.channel.send("```Cannot send an empty message```")
         let req = await Persona.findOne({ id: params.msg.author.id, name: params.args[0] });

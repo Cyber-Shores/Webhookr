@@ -49,7 +49,7 @@ Bot.client.on('message', async msg => {
     if(msg.channel.type === 'dm') return;
     // if(!msg.content.startsWith("wb ")) markov.addStates(msg.content);
     try {
-        let command = Bot.evaluateMsg(msg);
+        let command = Bot.evaluateMsg(msg, false, (msg) => msg.content.startsWith(`<@!${Bot.client.user.id}>`) || msg.content.startsWith('wb '), (msg) => { return msg.content.split(' ').slice(1).join(' ').trim()} );
         if(command.reason == "no commands available") {
             // console.log(`Extras: ${command.extra}`)
             let hook = (await msg.guild.fetchWebhooks()).find(w => w.owner == Bot.client.user);
@@ -57,6 +57,7 @@ Bot.client.on('message', async msg => {
                 hook = await msg.channel.createWebhook('Webhookr Proxy Hook');
             }
             let args = command.extra.split(' ');
+            console.log(args + '\n' +command.reason);
             if(args[0] == 'stop') return;
             let user: GuildMember;
             if(args[0] == 'wb')

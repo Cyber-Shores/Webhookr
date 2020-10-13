@@ -70,8 +70,9 @@ export declare class Machina {
      * @param msg Message that is being evaluted
      * @param checkPrefix should it check for the given prefix of the bot (false if you want custom prefixes)
      * @param check a function that returns true or null for a pass. A fail will exit this function, a pass will continue.
+     * @param mutator a function that allows you to edit the user's message. Helpful for custom prefixes or when using custom checks.
      */
-    evaluateMsg(msg: Message, checkPrefix?: boolean, check?: (Message: any) => boolean): MachinaResponse<MachinaFunction | MachinaFunction[]>;
+    evaluateMsg(msg: Message, checkPrefix?: boolean, check?: (msg: Message) => boolean, mutator?: (msg: Message) => string): MachinaResponse<MachinaFunction | MachinaFunction[]>;
     /**
      * Gets the arguments out of the content
      * @param content The content of the message in which you want to extract the

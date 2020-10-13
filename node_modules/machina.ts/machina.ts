@@ -159,8 +159,9 @@ export class Machina {
      * @param msg Message that is being evaluted
      * @param checkPrefix should it check for the given prefix of the bot (false if you want custom prefixes)
      * @param check a function that returns true or null for a pass. A fail will exit this function, a pass will continue.
+     * @param mutator a function that allows you to edit the user's message. Helpful for custom prefixes or when using custom checks.
      */
-    evaluateMsg(msg: Message, checkPrefix = true, check?: (Message) => boolean): /** Value is the list of functions, reason is the reason why it works or fails, extra is just some extra info for debugging */MachinaResponse<MachinaFunction | MachinaFunction[]>{ // TODO custom prefixes per server, custom verification
+    evaluateMsg(msg: Message, checkPrefix = true, check?: (msg: Message) => boolean, mutator?: (msg: Message) => string): /** Value is the list of functions, reason is the reason why it works or fails, extra is just some extra info for debugging */MachinaResponse<MachinaFunction | MachinaFunction[]>{ // TODO custom prefixes per server, custom verification
         if(msg.author.username == this.client.user.username) return {value: null, reason: "msg author is the same as bot"}
         if(checkPrefix && !msg.content.includes(this.PREFIX)) return {value: null, reason: "msg does not include the set prefix"}
         if(checkPrefix && !msg.content.startsWith(this.PREFIX)) return {value: null, reason: "msg does not start with correct prefix"}
@@ -171,7 +172,10 @@ export class Machina {
                 return {value: undefined, reason: "didnt pass given check", extra: check}
         }
 
-        const content = Machina.subCommandMiddleware(msg.content.substring(this.PREFIX.length))
+        if(mutator && typeof mutator == "function")
+            msg.content = mutator(msg)
+
+        const content = Machina.subCommandMiddleware(checkPrefix ? msg.content.substring(this.PREFIX.length) : msg.content)
         let reasons = []
         let commands = this.commands.filter(mF => mF.monikers.includes(content.split(" ")[0]))
         let available = commands.filter(c => {let r = Machina.isAuthorized(msg, c); if(!r.value) reasons.push(r.extra); return r.value})
