@@ -104,7 +104,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
 })
 ("webhook-commands", "inventory", async (params: MachinaFunctionParameters) => {
     if(params.args[0] == undefined) {
-        const MAX = 9;
+        const MAX = 3;
         let personas = []
         let req = await Persona.find({ id: params.msg.author.id })
     
@@ -114,16 +114,22 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
         
         let fields = [];
         personas.forEach((p,i) => {
-            fields.push({ name: `${i+1}.`, value: p, inline: true});
+            fields.push({ name: `${i+1}.`, value: `\`\`\`${['css','yaml','http','arm'][Math.floor(Math.random()*4)]}\n${p}\`\`\``, inline: false});
         });
         let embeds = [];
         for(let i = 0; i<=Math.floor(fields.length/MAX); i++) {
             embeds[i] = new MessageEmbed({
-                title: `${params.msg.author.username}'s Webhook Inventory:`,
+                title: `${params.msg.author.username}'s ${['Cool', 'Awesome', 'Epic'][Math.floor(Math.random()*3)]} Inventory:`,
                 color: params.msg.member.displayHexColor,
+                thumbnail: {
+                    url: params.msg.author.displayAvatarURL(),
+                },
                 description: `Total: ${req.length}`,
                 footer: {
                     text: 'Menu Running!'
+                },
+                image: {
+                    url: "https://i.imgur.com/Y0bVdO4.jpg"
                 }
             });
             embeds[i].addFields(fields.slice(i*MAX,(MAX*(i+1)) || (fields.length+i*MAX)));
@@ -136,7 +142,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
             const left = '◀️';
             const right = '▶️';
             menu.react(left).then(() => menu.react(right));
-            const collector = menu.createReactionCollector((reaction, user) => user == params.msg.author && (reaction.emoji.name == left || reaction.emoji.name == right), {time: 15000});
+            const collector = menu.createReactionCollector((reaction, user) => user == params.msg.author && (reaction.emoji.name == left || reaction.emoji.name == right), {time: 45000});
             collector.on('collect', r => {
                 switch(r.emoji.name) {
                     case left:
