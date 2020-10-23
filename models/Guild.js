@@ -6,6 +6,10 @@ const Guild = Schema(
     mimickable: {
         default: true,
         type: Boolean
+    },
+    premium: {
+    default: true,
+    type: Boolean
     }
     },
     { collection : "guild" }
