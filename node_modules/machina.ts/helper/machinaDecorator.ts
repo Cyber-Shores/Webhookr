@@ -54,7 +54,7 @@ export const machinaDecoratorInfo = (info: MachinaFunctionDefinition & Required<
 
             // checks the arguments, errors out if it doesnt match
             results = info.args ? checkArgsAgainstCriteria(_args, info.args) : null
-            if(info.strictArgs) // When it errors out
+            if(info.strictArgs && !exists(extra)) // When it errors out
             if(!results?.value || !exists(results)) {
                 await new MachinaMessage({title: `Parameter Error${msg["_name"] ? ": " + msg["_name"] : ""}`, description: wrap((_args.length == 0 ? "You did not input any arguments, please try again." : "Your arguments did not match any of the required arguments.") + " Arguments for this command are listed below."), fields: arrify(info.args).map(arrify).map((a, i) => ({name: "Option " + (i+1), value: arrify(a).map(_a => `${_a.name} - ${_a.type}`).join("\n"), inline: true}))}, msg).error()
                 

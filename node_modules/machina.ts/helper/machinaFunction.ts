@@ -47,7 +47,7 @@ export type MachinaFunction = MachinaFunctionDefinition & Function
 /** MachinaArgs's types as strings */
 export type MachinaArgsTypeNames = "string" | "number" | "boolean" // | "array" // NOTE: I dont know how you would take a message and turn it into an array with other types like string, array, boolean, array. Like i guess you could add markers, but that seems like a lot of work.
 /** MachinaArgs's actual types (string, number, boolean) */
-export type MachinaArgsTypes = string | number | boolean
+export type MachinaArgsTypes = string | number | bigint | boolean
 // export type MachinaArgsTypes<T> = Array<T>
 export interface MachinaArgs {
     /** The name of the argument */

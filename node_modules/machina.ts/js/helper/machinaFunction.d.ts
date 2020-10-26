@@ -42,7 +42,7 @@ export declare type MachinaFunction = MachinaFunctionDefinition & Function;
 /** MachinaArgs's types as strings */
 export declare type MachinaArgsTypeNames = "string" | "number" | "boolean";
 /** MachinaArgs's actual types (string, number, boolean) */
-export declare type MachinaArgsTypes = string | number | boolean;
+export declare type MachinaArgsTypes = string | number | bigint | boolean;
 export interface MachinaArgs {
     /** The name of the argument */
     name: string;

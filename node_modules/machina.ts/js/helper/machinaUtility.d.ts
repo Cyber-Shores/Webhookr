@@ -47,6 +47,12 @@ export declare type MachinaReason<E, R = E> = {
     expected: E;
     recieved: R;
 };
+/**
+ * @property value: matches a set argument (true / false)
+ * @property extra: index of the param it matches (0 if it matches the first argument defined)
+ * @property results: the param info and the user sent param info (value of the input and definition of the parameter)
+ * @property extraResults: extra params that the user sent (any extra parameters that dont have a corresponding argument defined)
+ */
 export declare type MachinaArgsInfo = MachinaResponse<boolean> & {
     results: MachinaReason<MachinaArgs, MachinaArgsTypes>[];
     extraResults?: MachinaArgsTypes[];

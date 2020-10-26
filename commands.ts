@@ -37,6 +37,9 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
         ("webhook-commands", "add", async (params: MachinaFunctionParameters) => {
             // console.log(`DEBUG - args: ${params.args}`);
             // console.log(`DEBUG - attach: ${params.msg.attachments.array()[0]}`);
+            let personaList = await Persona.find({ id: params.msg.author.id })
+            let prem = await Guild.findOne({ id: params.msg.author.id })
+            if(personaList.length >= 3 && !prem.premium) return params.msg.channel.send('```oops, sorry, you need premium in order to store more than 3 personas!```', { files: [ "https://i.imgur.com/Y0bVdO4.jpg" ] });
             if(params.args[0] == undefined) return params.msg.channel.send('```ERROR: Persona must have a name```');
             let req = await Persona.findOne({ id: params.msg.author.id, name: params.args[0] });
             if(req) {
@@ -104,7 +107,14 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
 })
 ("webhook-commands", "inventory", async (params: MachinaFunctionParameters) => {
     if(params.args[0] == undefined) {
-        const MAX = 3;
+        let prem = await Guild.findOne({ id: params.msg.author.id })
+        let MAX = 3;
+        let inline = false;
+        if(prem.premium) {
+            MAX = 9;
+            inline = true;
+        }
+        
         let personas = []
         let req = await Persona.find({ id: params.msg.author.id })
     
@@ -114,7 +124,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
         
         let fields = [];
         personas.forEach((p,i) => {
-            fields.push({ name: `${i+1}.`, value: `\`\`\`${['css','yaml','http','arm'][Math.floor(Math.random()*4)]}\n${p}\`\`\``, inline: false});
+            fields.push({ name: `${i+1}.`, value: `\`\`\`${['css','yaml','http','arm'][Math.floor(Math.random()*4)]}\n${p}\`\`\``, inline: inline});
         });
         let embeds = [];
         for(let i = 0; i<=Math.floor(fields.length/MAX); i++) {
@@ -165,6 +175,8 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
         }
     }else{
         if(!params.args.slice(1, params.args.length).join(" ") && params.msg.attachments.size == 0) return params.msg.channel.send("```Cannot send an empty message```")
+
+        
         let req = await Persona.findOne({ id: params.msg.author.id, name: params.args[0] });
         if(!req) {
             let personas = []
@@ -215,6 +227,7 @@ export const mimic: MachinaFunction = machinaDecoratorInfo
 ({monikers: ["mimic"], description: "allows user to set whether or not they can be mimicked"})
 ("webhook-commands", "mimic", async (params: MachinaFunctionParameters) => {
     let req = await Guild.findOne({ id: params.msg.author.id })
+    if(!req.premium) return params.msg.channel.send('``` oops, sorry, this is a premium only feature! ```');
     if(params.args[0] == undefined) {
         console.log("NO ARGS");
         if(req != null){
@@ -235,6 +248,33 @@ export const mimic: MachinaFunction = machinaDecoratorInfo
         await Guild.findOneAndUpdate({ id: params.msg.author.id }, { $set: { mimickable: prefrence } }, { new: true });
         return params.msg.channel.send(`\`\`\`Prefrence updated to: ${prefrence}\`\`\``);
     }
+});
+
+export const premium: MachinaFunction = machinaDecoratorInfo
+({monikers: ["premium"], description: "allows specific users to set the premium status of other users"})
+("webhook-commands", "premium", async (params: MachinaFunctionParameters) => {
+    // console.log("DEBUG message content: "+ params.msg.content)
+    // console.log("DEBUG args: "+ params.args)
+    // console.log(typeof params.args[0])
+    // console.log(typeof String(params.args[0]))
+    let accepted = ['265499320894095371', '393247221505851412', '568087768530419732', '735322421862727760'];
+    if(!accepted.includes(params.msg.author.id)) return;
+
+    if(params.args[0] == undefined) return params.msg.channel.send('```Must provide an id and, optionally, a boolean to set the status to```');
+    let req = await Guild.findOne({ id: String(params.args[0]) })
+    if(req == null) {
+        let m = await params.msg.channel.send("```Creating document...```");
+        const doc = new Guild({ id: String(params.args[0]) });
+        await doc.save();
+        m.delete();
+        req = await Guild.findOne({ id: String(params.args[0]) })
+    }
+    if(params.args[1] == undefined) return params.msg.channel.send(`\`\`\`Premium status of ${params.Bot.client.users.cache.get(String(params.args[0])).username}: ${req.premium}\`\`\``);
+
+    if(typeof params.args[1] != "boolean") return params.msg.channel.send('```The only two allowed inputs for premium status are "true" or "false" ```');
+    await Guild.findOneAndUpdate({ id: String(params.args[0]) }, { $set: { premium: params.args[1] } }, { new: true });
+    return params.msg.channel.send(`\`\`\`Premium status of ${params.Bot.client.users.cache.get(String(params.args[0])).username} updated to: ${params.args[1]}\`\`\``);
+    
 });
 
 export const help: MachinaFunction = machinaDecoratorInfo

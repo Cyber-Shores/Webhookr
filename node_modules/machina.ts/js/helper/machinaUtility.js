@@ -61,7 +61,7 @@ exports.convertArgType = (arg) => {
     if (arg == "true" || arg == "false")
         return arg == "true";
     if (!isNaN(arg))
-        return parseFloat(arg);
+        return "" + parseFloat(arg) != arg && !arg.includes(".") ? BigInt(arg) : parseFloat(arg);
     return arg;
 };
 /**

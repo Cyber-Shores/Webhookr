@@ -51,7 +51,7 @@ exports.machinaDecoratorInfo = (info) =>
                 }
             // checks the arguments, errors out if it doesnt match
             results = info.args ? machinaUtility_1.checkArgsAgainstCriteria(_args, info.args) : null;
-            if (info.strictArgs) // When it errors out
+            if (info.strictArgs && !machinaUtility_1.exists(extra)) // When it errors out
                 if (!(results === null || results === void 0 ? void 0 : results.value) || !machinaUtility_1.exists(results)) {
                     await new machinaMessage_1.MachinaMessage({ title: `Parameter Error${msg["_name"] ? ": " + msg["_name"] : ""}`, description: word_wrap_1.default((_args.length == 0 ? "You did not input any arguments, please try again." : "Your arguments did not match any of the required arguments.") + " Arguments for this command are listed below."), fields: machinaUtility_1.arrify(info.args).map(machinaUtility_1.arrify).map((a, i) => ({ name: "Option " + (i + 1), value: machinaUtility_1.arrify(a).map(_a => `${_a.name} - ${_a.type}`).join("\n"), inline: true })) }, msg).error();
                     return console.log("this is the part where it would error to the user: " + propertyKey + " in " + target.name);

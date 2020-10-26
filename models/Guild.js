@@ -8,7 +8,7 @@ const Guild = Schema(
         type: Boolean
     },
     premium: {
-    default: true,
+    default: false,
     type: Boolean
     }
     },
