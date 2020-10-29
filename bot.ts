@@ -1,5 +1,5 @@
 import { Machina, extractClasses, arrify, MachinaFunction, MachinaMessage } from "machina.ts";
-const Bot = new Machina("NzYxMzQwMzk2NjM4ODMwNjI0.X3ZLfw.-50Ch3C_A0sbp1qyoE1C1U2mRFo", "wb ");
+const Bot = new Machina(String(process.env.TOKEN), "wb ");
 import { GuildMember, Message, MessageEmbed, TextChannel } from 'discord.js';
 import fs = require('fs');
 const mongoose = require('mongoose');
@@ -24,7 +24,7 @@ let markov = new Markov();
 //     });
 // });
 
-mongoose.connect("mongodb+srv://admin:12KuxLmPkYlptxj3@cluster0.h4bxo.mongodb.net/webhookrdb?retryWrites=true&w=majority", {
+mongoose.connect(String(process.env.MONGOLINK), {
     useNewUrlParser: true,
     useFindAndModify: false,
     useUnifiedTopology: true
