@@ -35,7 +35,7 @@ Bot.initizalize();
 
 Bot.client.on('ready', async () => {
     try {
-        let link = await Bot.client.generateInvite(["ADMINISTRATOR"]);
+        let link = await Bot.client.generateInvite({ permissions: "ADMINISTRATOR"});
         console.log(`Generated bot invite link: ${link}`);
     } catch(e) {
         console.log(e.stack);

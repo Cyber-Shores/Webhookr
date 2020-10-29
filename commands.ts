@@ -110,9 +110,11 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
         let prem = await Guild.findOne({ id: params.msg.author.id })
         let MAX = 3;
         let inline = false;
+        let image = "https://i.imgur.com/Y0bVdO4.jpg";
         if(prem.premium) {
             MAX = 9;
             inline = true;
+            image = null;
         }
         
         let personas = []
@@ -139,7 +141,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
                     text: 'Menu Running!'
                 },
                 image: {
-                    url: "https://i.imgur.com/Y0bVdO4.jpg"
+                    url: image
                 }
             });
             embeds[i].addFields(fields.slice(i*MAX,(MAX*(i+1)) || (fields.length+i*MAX)));
@@ -251,14 +253,14 @@ export const mimic: MachinaFunction = machinaDecoratorInfo
 });
 
 export const premium: MachinaFunction = machinaDecoratorInfo
-({monikers: ["premium"], description: "allows specific users to set the premium status of other users"})
+({monikers: ["premium", "donate"], description: "allows specific users to set the premium status of other users"})
 ("webhook-commands", "premium", async (params: MachinaFunctionParameters) => {
     // console.log("DEBUG message content: "+ params.msg.content)
     // console.log("DEBUG args: "+ params.args)
     // console.log(typeof params.args[0])
     // console.log(typeof String(params.args[0]))
     let accepted = ['265499320894095371', '393247221505851412', '568087768530419732', '735322421862727760'];
-    if(!accepted.includes(params.msg.author.id)) return;
+    if(!accepted.includes(params.msg.author.id)) return params.msg.channel.send('```Please contact PremiumDoggo#5101 for premium features!```');
 
     if(params.args[0] == undefined) return params.msg.channel.send('```Must provide an id and, optionally, a boolean to set the status to```');
     let req = await Guild.findOne({ id: String(params.args[0]) })
@@ -275,6 +277,27 @@ export const premium: MachinaFunction = machinaDecoratorInfo
     await Guild.findOneAndUpdate({ id: String(params.args[0]) }, { $set: { premium: params.args[1] } }, { new: true });
     return params.msg.channel.send(`\`\`\`Premium status of ${params.Bot.client.users.cache.get(String(params.args[0])).username} updated to: ${params.args[1]}\`\`\``);
     
+});
+
+export const invite: MachinaFunction = machinaDecoratorInfo
+({monikers: ["invite"], description: "sends bot invite link"})
+("webhook-commands", "invite", async (params: MachinaFunctionParameters) => {
+    const link = await params.Bot.client.generateInvite({ permissions: "ADMINISTRATOR"});
+    const embed = new MessageEmbed({
+        color: params.msg.member.displayHexColor,
+        description: "Contact PremiumDoggo#5101 for premium features!",
+        image: {
+            url: "https://i.imgur.com/Y0bVdO4.jpg",
+        },
+        title: 'Add the bot!',
+        url: link,
+        timestamp: new Date(),
+        footer: {
+            text: `${params.msg.author.username}`,
+            icon_url: `${params.msg.author.displayAvatarURL()}`,
+        },
+    })
+    params.msg.channel.send(embed);
 });
 
 export const help: MachinaFunction = machinaDecoratorInfo
@@ -322,6 +345,14 @@ export const help: MachinaFunction = machinaDecoratorInfo
     wb mimic {true or false or nothing to check status}
     "wb mimic false"
     set whether or not you want others to be able to mimic you
+
+    wb invite
+    "wb invite"
+    generates a link to add the bot to a different server
+
+    wb donate (or wb premium)
+    "wb donate"
+    information about premium features
     
     wb help
     "wb help"
