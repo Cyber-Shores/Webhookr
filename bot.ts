@@ -1,5 +1,6 @@
+require('dotenv').config();
 import { Machina, extractClasses, arrify, MachinaFunction, MachinaMessage } from "machina.ts";
-const Bot = new Machina(String(process.env.TOKEN), "wb ");
+const Bot = new Machina(process.env.TOKEN, "wb ");
 import { GuildMember, Message, MessageEmbed, TextChannel } from 'discord.js';
 import fs = require('fs');
 const mongoose = require('mongoose');
@@ -24,7 +25,7 @@ let markov = new Markov();
 //     });
 // });
 
-mongoose.connect(String(process.env.MONGOLINK), {
+mongoose.connect(process.env.MONGOLINK, {
     useNewUrlParser: true,
     useFindAndModify: false,
     useUnifiedTopology: true
