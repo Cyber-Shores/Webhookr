@@ -52,19 +52,20 @@ Bot.client.on('message', async msg => {
     try {
         let command = Bot.evaluateMsg(msg, false, (msg) => msg.content.startsWith(`<@!${Bot.client.user.id}>`) || msg.content.startsWith('wb '), (msg) => { return msg.content.split(' ').slice(1).join(' ').trim()} );
         if(command.reason == "no commands available") {
-            // console.log(`Extras: ${command.extra}`)
             let hook = (await msg.guild.fetchWebhooks()).find(w => w.owner == Bot.client.user);
             if(!hook){
                 hook = await msg.channel.createWebhook('Webhookr Proxy Hook');
             }
             let args = command.extra.split(' ');
-            console.log(args + '\n' +command.reason);
-            if(args[0] == 'stop') return;
+            // console.log(args + '\n' +command.reason);
+            if(args[0] == 'stop' || args[0] == 's') return;
             let user: GuildMember;
             if(args[0] == 'wb')
                 user = msg.member;
             else
-                user = msg.mentions.members.first() || (!args[0] ? null : (await msg.guild.members.fetch({query: args[0], limit: 1})).array()[0]) || msg.member;
+                user = msg.mentions.members.first() || (!args[0] ? null : (await msg.guild.members.fetch({query: args[0], limit: 1})).array()[0]);
+            if(user == undefined)
+                return msg.channel.send("```Could not find that user```");
             let req = await Guild.findOne({ id: user.user.id });
             if(req != null && !req.mimickable) return msg.channel.send(`\`\`\`User "${user.user.username}" has mimicking turned off\`\`\``)
             if(args[1] == undefined && msg.attachments.size == 0) {

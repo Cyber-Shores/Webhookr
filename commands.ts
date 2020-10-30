@@ -20,9 +20,9 @@ function validURL(str) {
 
 
 export const inventory: MachinaFunction = machinaDecoratorInfo
-({monikers: ["i"], description: "displays a users webhook inventory in a menu", subs: 
+({monikers: ["i","inv", "inventory"], description: "displays a users webhook inventory in a menu", subs: 
     [
-        machinaDecoratorInfo({monikers: ["remove"], description: "removes a webhook from users inventory"})
+        machinaDecoratorInfo({monikers: ["remove", "r"], description: "removes a webhook from users inventory"})
         ("webhook-commands", "remove", async (params: MachinaFunctionParameters) => {
             let req = await Persona.findOne({ id: params.msg.author.id, name: params.args[0] });
             if(!req) {
@@ -96,7 +96,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
             const collector = params.msg.channel.createMessageCollector(m => m.author == params.msg.author);
             params.msg.channel.send("```The bot will now begin relaying your messages ```")
             collector.on('collect', async message => {
-                if(message.content == 'wb stop') return collector.stop();
+                if(message.content == 'wb stop' || message.content == 'wb s') return collector.stop();
                 
                 let hook = (await message.guild.fetchWebhooks()).find(w => w.owner == params.Bot.client.user);
                 await hook.edit({ channel: message.channel.id }).then(w => w.send(message.content, { username: req.name, avatarURL: req.image, files: message.attachments.array() }));
@@ -107,7 +107,15 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
 })
 ("webhook-commands", "inventory", async (params: MachinaFunctionParameters) => {
     if(params.args[0] == undefined) {
+
         let prem = await Guild.findOne({ id: params.msg.author.id })
+        if(prem == null) {
+            let m = await params.msg.channel.send("```Creating document...```");
+            const doc = new Guild({ id: params.msg.author.id });
+            await doc.save();
+            m.delete();
+            prem = await Guild.findOne({ id: params.msg.author.id })
+        }
         let MAX = 3;
         let inline = false;
         let image = "https://i.imgur.com/Y0bVdO4.jpg";
@@ -116,7 +124,6 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
             inline = true;
             image = null;
         }
-        
         let personas = []
         let req = await Persona.find({ id: params.msg.author.id })
     
@@ -149,7 +156,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
 
         setTimeout(() => {}, 1000)
         let menu = await params.msg.channel.send(embeds[0]);
-        if(fields.length>10) {
+        if(fields.length>MAX) {
             let count = 0;
             const left = '◀️';
             const right = '▶️';
@@ -229,16 +236,17 @@ export const mimic: MachinaFunction = machinaDecoratorInfo
 ({monikers: ["mimic"], description: "allows user to set whether or not they can be mimicked"})
 ("webhook-commands", "mimic", async (params: MachinaFunctionParameters) => {
     let req = await Guild.findOne({ id: params.msg.author.id })
-    if(!req.premium) return params.msg.channel.send('``` oops, sorry, this is a premium only feature! ```');
-    if(params.args[0] == undefined) {
-        console.log("NO ARGS");
-        if(req != null){
-            return params.msg.channel.send(`\`\`\`Mimickable state: ${req.mimickable}\`\`\``)
-        }
+    if(req == null) {
+        let m = await params.msg.channel.send("```Creating document...```");
         const doc = new Guild({ id: params.msg.author.id });
         await doc.save();
-        return params.msg.channel.send("```Your document has been created with default values.```")
+        m.delete();
+        req = await Guild.findOne({ id: params.msg.author.id })
     }
+    if(params.args[0] == undefined) {
+        return params.msg.channel.send(`\`\`\`Mimickable state: ${req.mimickable}\`\`\``)
+    }
+    if(!req.premium) return params.msg.channel.send('``` oops, sorry, this is a premium only feature! ```');
     console.log(typeof params.args[0]);
     if(typeof params.args[0] != "boolean") return params.msg.channel.send('```The only two allowed inputs for preferences are "true" or "false" ```')
     var prefrence = params.args[0]
@@ -277,6 +285,16 @@ export const premium: MachinaFunction = machinaDecoratorInfo
     await Guild.findOneAndUpdate({ id: String(params.args[0]) }, { $set: { premium: params.args[1] } }, { new: true });
     return params.msg.channel.send(`\`\`\`Premium status of ${params.Bot.client.users.cache.get(String(params.args[0])).username} updated to: ${params.args[1]}\`\`\``);
     
+});
+
+export const avatar: MachinaFunction = machinaDecoratorInfo
+({monikers: ["avatar"], description: "sends a users avatar"})
+("webhook-commands", "avatar", async (params: MachinaFunctionParameters) => {
+    let user: GuildMember;
+    user = params.msg.mentions.members.first() || (!params.args[0] ? null : (await params.msg.guild.members.fetch({query: String(params.args[0]), limit: 1})).array()[0]);
+    if(user == undefined) return params.msg.channel.send("```Could not find that user```");
+    let attachment = new MessageAttachment(user.user.displayAvatarURL(),`${params.msg.author.username}-avatar.png`);
+    params.msg.channel.send(attachment);
 });
 
 export const invite: MachinaFunction = machinaDecoratorInfo
