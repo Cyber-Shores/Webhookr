@@ -323,14 +323,6 @@ export const invite: MachinaFunction = machinaDecoratorInfo
 export const help: MachinaFunction = machinaDecoratorInfo
 ({monikers: ["help"], description: "displays the commands"})
 ("webhook-commands", "help", async (params: MachinaFunctionParameters) => {
-    // let embed = new MachinaMessage({
-    //     title: "Commands:",
-    //     color: params.msg.member.displayHexColor,
-    //     description: 'Remove brackets "{}" when performing a command'
-    //     fields: [
-    //         {name: ''}
-    //     ]
-    // }, params.msg)
     params.msg.channel.send(`\`\`\`
     Commands and Usage:
     wb {username, mention or "wb"} {message or nothing for random}
@@ -343,7 +335,8 @@ export const help: MachinaFunction = machinaDecoratorInfo
 
     wb i add {name of new Persona} {image or link}
     "wb i add denton https://i.imgur.com/8zHiOK2.jpeg"
-    will create a Persona with the name  and pfp provided. If no image/link is provided, will wait 60 seconds for you to provide one in a message
+    will create a Persona with the name  and pfp provided. 
+    If no image/link is provided, will wait 60 seconds for you to provide one in a message
 
     wb i remove {name of Persona}
     "wb i remove denton"
@@ -369,6 +362,10 @@ export const help: MachinaFunction = machinaDecoratorInfo
     wb invite
     "wb invite"
     generates a link to add the bot to a different server
+
+    wb avatar {username or mention}
+    "wb avatar ravenr"
+    sends the avatar of the provided user
 
     wb donate (or wb premium)
     "wb donate"
