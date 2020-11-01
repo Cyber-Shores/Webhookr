@@ -293,8 +293,10 @@ export const avatar: MachinaFunction = machinaDecoratorInfo
     let user: GuildMember;
     user = params.msg.mentions.members.first() || (!params.args[0] ? null : (await params.msg.guild.members.fetch({query: String(params.args[0]), limit: 1})).array()[0]);
     if(user == undefined) return params.msg.channel.send("```Could not find that user```");
-    let attachment = new MessageAttachment(user.user.displayAvatarURL(),`${params.msg.author.username}-avatar.png`);
-    params.msg.channel.send(attachment);
+    //https://cdn.discordapp.com/avatars/735322421862727760/e849928e7056b1807b4d2c39659273ac.png?size=1024
+    //https://cdn.discordapp.com/avatars/735322421862727760/e849928e7056b1807b4d2c39659273ac.webp
+    let link = user.user.displayAvatarURL().slice(0,-4)+"png?size=1024";
+    params.msg.channel.send(new MessageAttachment(link, `${user.user.username}-avatar.png`));
 });
 
 export const invite: MachinaFunction = machinaDecoratorInfo
