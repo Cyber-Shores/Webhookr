@@ -73,7 +73,6 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
                     });
             }
             if(doc != undefined) {
-                // console.log(doc);
                 return await params.msg.channel.send( new MessageEmbed({
                     title: 'New Persona Created!',
                     color: params.msg.member.displayHexColor,
@@ -90,14 +89,11 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
         ("webhook-commands", "start", async (params: MachinaFunctionParameters) => {
             if(params.args[0] == undefined) return params.msg.channel.send("```Please specify a persona```");
             let req = await Persona.findOne({ id: params.msg.author.id, name: params.args[0] });
-            if(!req) {
-                return params.msg.channel.send("```Could not find the persona```")
-            }
+            if(!req) return params.msg.channel.send("```Could not find the persona```")
             const collector = params.msg.channel.createMessageCollector(m => m.author == params.msg.author);
             params.msg.channel.send("```The bot will now begin relaying your messages ```")
             collector.on('collect', async message => {
-                if(message.content == 'wb stop' || message.content == 'wb s') return collector.stop();
-                
+                if(message.content == 'stop')   return collector.stop();
                 let hook = (await message.guild.fetchWebhooks()).find(w => w.owner == params.Bot.client.user);
                 await hook.edit({ channel: message.channel.id }).then(w => w.send(message.content, { username: req.name, avatarURL: req.image, files: message.attachments.array() }));
                 message.delete();
@@ -228,7 +224,7 @@ export const random: MachinaFunction = machinaDecoratorInfo
         await hook.edit({ channel: params.msg.channel.id }).then(w => w.send(randMsg || "Hello! :D", { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: params.msg.attachments.array() }));
     }
     else
-        await hook.edit({ channel: params.msg.channel.id }).then(w => w.send(params.args.slice(1).join(' ').trim(), { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: params.msg.attachments.array() }));
+        await hook.edit({ channel: params.msg.channel.id }).then(w => w.send(params.args.slice(0).join(' ').trim(), { username: user.nickname || user.user.username, avatarURL: user.user.displayAvatarURL(), files: params.msg.attachments.array() }));
     params.msg.delete();
 });
 
@@ -261,12 +257,8 @@ export const mimic: MachinaFunction = machinaDecoratorInfo
 });
 
 export const premium: MachinaFunction = machinaDecoratorInfo
-({monikers: ["premium", "donate"], description: "allows specific users to set the premium status of other users"})
+({monikers: ["premium"], description: "allows specific users to set the premium status of other users"})
 ("webhook-commands", "premium", async (params: MachinaFunctionParameters) => {
-    // console.log("DEBUG message content: "+ params.msg.content)
-    // console.log("DEBUG args: "+ params.args)
-    // console.log(typeof params.args[0])
-    // console.log(typeof String(params.args[0]))
     let accepted = ['265499320894095371', '393247221505851412', '568087768530419732', '735322421862727760'];
     if(!accepted.includes(params.msg.author.id)) return params.msg.channel.send('```Please contact PremiumDoggo#5101 for premium features!```');
 
@@ -287,6 +279,26 @@ export const premium: MachinaFunction = machinaDecoratorInfo
     
 });
 
+export const donate: MachinaFunction = machinaDecoratorInfo
+({monikers: ["donate"], description: "allows users to donate to recieve premium"})
+("webhook-commands", "donate", async (params: MachinaFunctionParameters) => {
+    const embed = new MessageEmbed({
+        color: 0xf9e3f9,
+        description: "Buy PremiumDoggo a coffee to get access to premium features!",
+        image: {
+            url: "https://ko-fi.com/img/anonsupporter2.png",
+        },
+        title: 'Buy Me a Coffee!',
+        url: 'https://ko-fi.com/webhookr',
+        timestamp: new Date(),
+        footer: {
+            text: `${params.msg.author.username}`,
+            icon_url: `${params.msg.author.displayAvatarURL()}`,
+        },
+    })
+    params.msg.channel.send(embed);
+});
+
 export const avatar: MachinaFunction = machinaDecoratorInfo
 ({monikers: ["avatar"], description: "sends a users avatar"})
 ("webhook-commands", "avatar", async (params: MachinaFunctionParameters) => {
@@ -305,7 +317,7 @@ export const invite: MachinaFunction = machinaDecoratorInfo
     const link = await params.Bot.client.generateInvite({ permissions: "ADMINISTRATOR"});
     const embed = new MessageEmbed({
         color: params.msg.member.displayHexColor,
-        description: "Contact PremiumDoggo#5101 for premium features!",
+        description: 'do "wb donate" for premium features!',
         image: {
             url: "https://i.imgur.com/Y0bVdO4.jpg",
         },
@@ -323,75 +335,59 @@ export const invite: MachinaFunction = machinaDecoratorInfo
 export const help: MachinaFunction = machinaDecoratorInfo
 ({monikers: ["help"], description: "displays the commands"})
 ("webhook-commands", "help", async (params: MachinaFunctionParameters) => {
-    params.msg.channel.send(`\`\`\`
-    Commands and Usage:
-    wb {username, mention or "wb"} {message or nothing for random}
-    "wb ravenr hello! im ravenr!"
-    will send a provided message (random if not provided) using a webhook with the name and pfp of a given member
-
-    wb i
-    "wb i"
-    will display your inventory of Personas
-
-    wb i add {name of new Persona} {image or link}
-    "wb i add denton https://i.imgur.com/8zHiOK2.jpeg"
-    will create a Persona with the name  and pfp provided. 
-    If no image/link is provided, will wait 60 seconds for you to provide one in a message
-
-    wb i remove {name of Persona}
-    "wb i remove denton"
-    will remove the Persona with the provided name from your inventory
-
-    wb i {name or number of Persona} {message}
-    "wb i denton hello!!"
-    will send your message as the chosen persona
-
-    wb random {message or nothing for random}
-    "wb random hahahahah im so cool"
-    will pick a random person in the server and send a given message as them
+    let embeds = [
+        new MessageEmbed({
+            title: "Commands",
+            description: 'Inventory Commands\nPrefix: "wb "',
+            fields: [
+                {name: "Inventory", value: 'Usage: i\nExample: "wb i"\nDescription: will display your inventory of Personas\nMonikers: "inv", "inventory"'},
+                {name: "Add", value: 'Usage: i add {name of new Persona} {image or link}\nExample: "wb i add denton https://i.imgur.com/8zHiOK2.jpeg"\nDescription: will create a Persona with the name and pfp provided.'},
+                {name: "Remove", value: 'Usage: i remove {name of Persona}\nExample: "wb i remove denton"\nDescription: will remove the Persona with the provided name from your inventory\nMonikers: "r"'},
+                {name: "Use", value: 'Usage: i {name or number of Persona} {message}\nExample: "wb i denton hello!!"\nDescription: will send your message as the chosen persona'},
+                {name: "Relay", value: 'Usage: i start {Persona to be used}\nExample: "wb i start denton"\nDescription: whenever you send a message in this channel, the bot will delete it and resend it as the provided Persona'},
+            ],
+            color: params.msg.member.displayHexColor
+        }),
+        new MessageEmbed({
+            title: "Commands",
+            description: 'Other Commands',
+            fields: [
+                {name: "Mimic", value: 'Usage: {username, mention or "wb"} {message or nothing for random}\nExample: "wb ravenr hello! im ravenr!"\nDescription: will send a provided message (random if not provided) using a webhook with the name and pfp of a given member'},
+                {name: "Random", value: 'Usage: random {message or nothing for random}\nExample: "wb random hahahahah im so cool"\nDescription: will pick a random person in the server and send a given message as them\nMonikers: "rand"'},
+                {name: "Relay", value: 'Usage: mimic {true or false or nothing to check status}\nExample: "wb mimic false"\nDescription: set whether or not you want others to be able to mimic you'},
+                {name: "Invite", value: 'Usage: wb invite\nExample: "wb invite"\nDescription: generates a link to add the bot to a different server'},
+                {name: "Avatar", value: 'Usage: avatar {username or mention}\nExample: "wb avatar ravenr"\nDescription: sends the avatar of the provided user'},
+                {name: "Donate", value: 'Usage: donate\nExample: "wb donate"\nDescription: information about premium features'},
+                {name: "Help", value: 'Usage: help\nExample: "wb help"\nDescription: sends this help menu'},
+            ],
+            color: params.msg.member.displayHexColor
+        })
+    ];
     
-    wb start {Persona to be used}
-    "wb start denton"
-    whenever you send a message in this channel, the bot will delete it and resend it as the provided Persona
-    to stop, type "wb stop"
 
-    wb mimic {true or false or nothing to check status}
-    "wb mimic false"
-    set whether or not you want others to be able to mimic you
-
-    wb invite
-    "wb invite"
-    generates a link to add the bot to a different server
-
-    wb avatar {username or mention}
-    "wb avatar ravenr"
-    sends the avatar of the provided user
-
-    wb donate (or wb premium)
-    "wb donate"
-    information about premium features
-    
-    wb help
-    "wb help"
-    sends this help menu
-    \`\`\``)
+    setTimeout(() => {}, 1000)
+    let menu = await params.msg.channel.send(embeds[0]);
+    let count = 0;
+    const left = '◀️';
+    const right = '▶️';
+    menu.react(left).then(() => menu.react(right));
+    const collector = menu.createReactionCollector((reaction, user) => user == params.msg.author && (reaction.emoji.name == left || reaction.emoji.name == right), {time: 45000});
+    collector.on('collect', r => {
+        switch(r.emoji.name) {
+            case left:
+                if(count != 0) {
+                    count--;
+                    menu.edit(embeds[count]);
+                }
+                break;
+            case right:
+                if(count != embeds.length-1) {
+                    count++;
+                    menu.edit(embeds[count]);
+                }
+                break;
+        }
+        menu.reactions.removeAll().then(() => menu.react(left).then(() => menu.react(right)));
+    });
+    collector.on('end', () => menu.edit(menu.embeds[0].setFooter('Menu Closed!')));
 });
-
-// export const command: MachinaFunction = machinaDecoratorInfo
-// ({monikers: ["command"], description: "N/A", subs: 
-//     [
-    
-//     machinaDecoratorInfo({monikers: ["subcommandone"], description: "N/A"})
-//     ("commands", "subcommandone", async (params: MachinaFunctionParameters) => {
-//         console.log("ran subcommandone")
-//     }),
-//     machinaDecoratorInfo({monikers: ["subcommandtwo"], description: "N/A"})
-//     ("commands", "subcommandtwo", async (params: MachinaFunctionParameters) => {
-//         console.log("ran subcommandtwo")
-//     })
-
-//     ]
-// })
-// ("commands", "command", async (params: MachinaFunctionParameters) => {
-//     console.log("ran command")
-// });

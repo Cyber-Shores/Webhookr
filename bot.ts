@@ -7,24 +7,6 @@ const mongoose = require('mongoose');
 const Guild = require('./models/Guild');
 const Markov = require('js-markov');
 let markov = new Markov();
-// fs.readdir('./cmd/', (err, files) => {
-//     if(err) console.error(err);
-
-//     const tsfiles = files.filter(f => f.split('.').pop() === 'ts');
-//     if(tsfiles.length <= 0) {
-//         console.log(`No commands to load in ./cmd/!`);
-//         return;
-//     }
-
-//     console.log(`Loading ${tsfiles.length} commands from ./cmd/!`);
-
-//     tsfiles.forEach((f, i) => {
-//         const props = require(`./cmd/${f}`);
-//         console.log(`${i + 1} ${f}!`);
-//         Bot.loadCommands(...(Object.values(props) as MachinaFunction[]));
-//     });
-// });
-
 mongoose.connect(process.env.MONGOLINK, {
     useNewUrlParser: true,
     useFindAndModify: false,
@@ -40,15 +22,12 @@ Bot.client.on('ready', async () => {
     } catch(e) {
         console.log(e.stack);
     }
-        console.log('Hello World!');
-
-    
+        console.log('Hello World!'); 
 });
 
 Bot.client.on('message', async msg => {
     if(msg.author.bot) return;
     if(msg.channel.type === 'dm') return;
-    // if(!msg.content.startsWith("wb ")) markov.addStates(msg.content);
     try {
         let command = Bot.evaluateMsg(msg, false, (msg) => msg.content.startsWith(`<@!${Bot.client.user.id}>`) || msg.content.startsWith('wb '), (msg) => { return msg.content.split(' ').slice(1).join(' ').trim()} );
         if(command.reason == "no commands available") {
@@ -57,8 +36,8 @@ Bot.client.on('message', async msg => {
                 hook = await msg.channel.createWebhook('Webhookr Proxy Hook');
             }
             let args = command.extra.split(' ');
-            // console.log(args + '\n' +command.reason);
-            if(args[0] == 'stop' || args[0] == 's') return;
+            console.log(args);
+            if(args[0] == 'stop') return;
             let user: GuildMember;
             if(args[0] == 'wb')
                 user = msg.member;
