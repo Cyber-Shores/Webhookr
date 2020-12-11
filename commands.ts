@@ -307,7 +307,7 @@ export const avatar: MachinaFunction = machinaDecoratorInfo
     if(user == undefined) return params.msg.channel.send("```Could not find that user```");
     //https://cdn.discordapp.com/avatars/735322421862727760/e849928e7056b1807b4d2c39659273ac.png?size=1024
     //https://cdn.discordapp.com/avatars/735322421862727760/e849928e7056b1807b4d2c39659273ac.webp
-    let link = user.user.displayAvatarURL().slice(0,-4)+"png?size=1024";
+    let link = user.user.displayAvatarURL({ format: 'png', dynamic: true, size: 4096 })
     params.msg.channel.send(new MessageAttachment(link, `${user.user.username}-avatar.png`));
 });
 
