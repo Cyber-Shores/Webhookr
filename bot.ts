@@ -17,7 +17,7 @@ Bot.initizalize();
 
 Bot.client.on('ready', async () => {
     try {
-        let link = await Bot.client.generateInvite({ permissions: "ADMINISTRATOR"});
+        let link = await Bot.client.generateInvite({ permissions: ["ADD_REACTIONS", "VIEW_CHANNEL", "SEND_MESSAGES", "MANAGE_MESSAGES", "MANAGE_WEBHOOKS", "USE_EXTERNAL_EMOJIS"]});
         console.log(`Generated bot invite link: ${link}`);
     } catch(e) {
         console.log(e.stack);
@@ -36,7 +36,6 @@ Bot.client.on('message', async msg => {
                 hook = await msg.channel.createWebhook('Webhookr Proxy Hook');
             }
             let args = command.extra.split(' ');
-            console.log(args);
             if(args[0] == 'stop') return;
             let user: GuildMember;
             if(args[0] == 'wb')

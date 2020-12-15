@@ -1,7 +1,7 @@
 import { createHook } from 'async_hooks';
 import { SSL_OP_EPHEMERAL_RSA } from 'constants';
 import { Collection, TextChannel, MessageEmbed, Message, MessageAttachment, BufferResolvable, ClientUser, GuildMember } from 'discord.js';
-import { machinaDecoratorInfo, MachinaFunction, MachinaFunctionParameters, MachinaMessage } from "machina.ts";
+import { checkArgsAgainstCriteria, machinaDecoratorInfo, MachinaFunction, MachinaFunctionParameters, MachinaMessage } from "machina.ts";
 import { Document } from 'mongoose';
 import { listenerCount } from 'process';
 const Persona = module.require('./models/Persona');
@@ -24,33 +24,33 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
     [
         machinaDecoratorInfo({monikers: ["remove", "r"], description: "removes a webhook from users inventory"})
         ("webhook-commands", "remove", async (params: MachinaFunctionParameters) => {
-            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args[0] });
+            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args.join(' ') });
             if(!req) {
                 return params.msg.channel.send("```Could not find that persona.```")
             }
-            Persona.deleteOne({ id: params.msg.author.id, name: params.args[0] }, function (err: any) {
+            Persona.deleteOne({ id: params.msg.author.id, name: params.args.join(' ') }, function (err: any) {
                 if(err) params.msg.channel.send("```Oops! Error occured persona could not be deleted.```");
                 return params.msg.channel.send("```Successfuly deleted!```")
             })
         }),
         machinaDecoratorInfo({monikers: ["add"], description: "adds a webhook to users inventory"})
         ("webhook-commands", "add", async (params: MachinaFunctionParameters) => {
-            // console.log(`DEBUG - args: ${params.args}`);
-            // console.log(`DEBUG - attach: ${params.msg.attachments.array()[0]}`);
             let personaList = await Persona.find({ id: params.msg.author.id })
             let prem = await Guild.findOne({ id: params.msg.author.id })
             if(personaList.length >= 3 && !prem.premium) return params.msg.channel.send('```oops, sorry, you need premium in order to store more than 3 personas!```', { files: [ "https://i.imgur.com/Y0bVdO4.jpg" ] });
             if(params.args[0] == undefined) return params.msg.channel.send('```ERROR: Persona must have a name```');
-            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args[0] });
+            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args.join(' ') });
             if(req) {
                 return params.msg.channel.send("```Oops! this Persona already exists!```")
             }
             let doc: Document;
+            if(params.args.join(' ').length > 32) return params.msg.channel.send('```oops! that name is too long, personas ```');
             if(params.msg.attachments.size != 0) {
-                doc = new Persona({ id: params.msg.author.id, name: params.args[0], image: params.msg.attachments.array()[0].url });
+                doc = new Persona({ id: params.msg.author.id, name: params.args.join(' '), image: params.msg.attachments.array()[0].url });
                 await doc.save();
-            } else if(params.args[1] != undefined && validURL(params.args[1])) {
-                doc = new Persona({ id: params.msg.author.id, name: params.args[0], image: params.args[1] });
+            } else if (validURL(params.args[params.args.length-1])) {
+                const url = params.args.pop();
+                doc = new Persona({ id: params.msg.author.id, name: params.args.join(' '), image: url });
                 await doc.save();
             } else {
                 let m = await params.msg.channel.send("```Please send the link or image that should be the profile pic for this persona```");
@@ -62,8 +62,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
                             link = collected.first().attachments.array()[0].url;
                         else
                             link = collected.first().content
-                        // console.log(link)
-                        doc = new Persona({ id: params.msg.author.id, name: params.args[0], image: link})
+                        doc = new Persona({ id: params.msg.author.id, name: params.args.join(' '), image: link})
                         let mNew = await m.edit("```Recieved!```");
                         await doc.save();
                         setTimeout(() => { mNew.delete() }, 5000);
@@ -85,14 +84,23 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
                 }))
             }
         }),
-        machinaDecoratorInfo({monikers: ["start"], description: "begins relaying messages as a given persona"})
+        machinaDecoratorInfo({monikers: ["start", "relay"], description: "begins relaying messages as a given persona"})
         ("webhook-commands", "start", async (params: MachinaFunctionParameters) => {
             if(params.args[0] == undefined) return params.msg.channel.send("```Please specify a persona```");
-            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args[0] });
+            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args.join(' ') });
             if(!req) return params.msg.channel.send("```Could not find the persona```")
             const collector = params.msg.channel.createMessageCollector(m => m.author == params.msg.author);
-            params.msg.channel.send("```The bot will now begin relaying your messages ```")
+            params.msg.channel.send("```The bot will now begin relaying your messages ```").then(m => {
+                
+            });
+            params.msg.delete();
+            let count = 0;
+            let myTimer;
             collector.on('collect', async message => {
+                clearTimeout(myTimer)
+                count++;
+                myTimer = setTimeout(() => count = 0, 3000)
+                if(count>4) return console.log(`Ignored "${message.content}"`);
                 if(message.content == 'stop')   return collector.stop();
                 let hook = (await message.guild.fetchWebhooks()).find(w => w.owner == params.Bot.client.user);
                 await hook.edit({ channel: message.channel.id }).then(w => w.send(message.content, { username: req.name, avatarURL: req.image, files: message.attachments.array() }));
@@ -126,6 +134,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
         req.forEach(doc => {
             personas.push(doc.name)
         });
+        if(personas.length == 0) return params.msg.channel.send('```Oops! looks like you don\'t have any Personas in your inventory!```');
         
         let fields = [];
         personas.forEach((p,i) => {
@@ -149,7 +158,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
             });
             embeds[i].addFields(fields.slice(i*MAX,(MAX*(i+1)) || (fields.length+i*MAX)));
         }
-
+        if(fields.length%MAX == 0) embeds.pop();
         setTimeout(() => {}, 1000)
         let menu = await params.msg.channel.send(embeds[0]);
         if(fields.length>MAX) {
@@ -179,21 +188,37 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
             
         }
     }else{
-        if(!params.args.slice(1, params.args.length).join(" ") && params.msg.attachments.size == 0) return params.msg.channel.send("```Cannot send an empty message```")
+        if(params.args.indexOf("-m") == -1 && params.msg.attachments.size == 0) return params.msg.channel.send('```Cannot send an empty message, please include a "-m" flag with a message following it or attach an image ```')
 
-        
-        let req = await Persona.findOne({ id: params.msg.author.id, name: params.args[0] });
-        if(!req) {
-            let personas = []
-            await Persona.find({ id: params.msg.author.id }).then(p => p.forEach(doc => {
-                personas.push(doc)
-            }));
-            if(!personas[(params.args[0] as number)-1]) return params.msg.channel.send("Could not find the persona");
-            req = personas[(params.args[0] as number)-1];
+        const flagIndex = params.args.indexOf('-m');
+        if(flagIndex == -1) {
+            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args.join(' ') });
+            if(!req) {
+                let personas = []
+                await Persona.find({ id: params.msg.author.id }).then(p => p.forEach(doc => {
+                    personas.push(doc)
+                }));
+                if(!personas[(params.args[0] as number)-1]) return params.msg.channel.send("Could not find the persona");
+                req = personas[(params.args[0] as number)-1];
+            }
+            let hook = (await params.msg.guild.fetchWebhooks()).find(w => w.owner == params.Bot.client.user);
+            await hook.edit({ channel: params.msg.channel.id }).then(w => w.send({ username: req.name, avatarURL: req.image, files: params.msg.attachments.array()}));
+            params.msg.delete();
+        } else {
+            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args.slice(0,flagIndex).join(' ') });
+            if(!req) {
+                let personas = []
+                await Persona.find({ id: params.msg.author.id }).then(p => p.forEach(doc => {
+                    personas.push(doc)
+                }));
+                if(!personas[(params.args[0] as number)-1]) return params.msg.channel.send("Could not find the persona");
+                req = personas[(params.args[0] as number)-1];
+            }
+            let hook = (await params.msg.guild.fetchWebhooks()).find(w => w.owner == params.Bot.client.user);
+            await hook.edit({ channel: params.msg.channel.id }).then(w => w.send(params.args.slice(flagIndex+1, params.args.length).join(" ") || null, { username: req.name, avatarURL: req.image, files: params.msg.attachments.array()}));
+            params.msg.delete();
         }
-        let hook = (await params.msg.guild.fetchWebhooks()).find(w => w.owner == params.Bot.client.user);
-        await hook.edit({ channel: params.msg.channel.id }).then(w => w.send(params.args.slice(1, params.args.length).join(" "), { username: req.name, avatarURL: req.image, files: params.msg.attachments.array()}));
-        params.msg.delete();
+
     }
 });
 
@@ -243,7 +268,6 @@ export const mimic: MachinaFunction = machinaDecoratorInfo
         return params.msg.channel.send(`\`\`\`Mimickable state: ${req.mimickable}\`\`\``)
     }
     if(!req.premium) return params.msg.channel.send('``` oops, sorry, this is a premium only feature! ```');
-    console.log(typeof params.args[0]);
     if(typeof params.args[0] != "boolean") return params.msg.channel.send('```The only two allowed inputs for preferences are "true" or "false" ```')
     var prefrence = params.args[0]
     if(req == null) {
@@ -263,6 +287,7 @@ export const premium: MachinaFunction = machinaDecoratorInfo
     if(!accepted.includes(params.msg.author.id)) return params.msg.channel.send('```Please contact PremiumDoggo#5101 for premium features!```');
 
     if(params.args[0] == undefined) return params.msg.channel.send('```Must provide an id and, optionally, a boolean to set the status to```');
+    if(!params.Bot.client.users.cache.get(String(params.args[0]))) return params.msg.channel.send('```Oops! couldn\'t find that user, make sure you are using a valid id```');
     let req = await Guild.findOne({ id: String(params.args[0]) })
     if(req == null) {
         let m = await params.msg.channel.send("```Creating document...```");
@@ -272,6 +297,7 @@ export const premium: MachinaFunction = machinaDecoratorInfo
         req = await Guild.findOne({ id: String(params.args[0]) })
     }
     if(params.args[1] == undefined) return params.msg.channel.send(`\`\`\`Premium status of ${params.Bot.client.users.cache.get(String(params.args[0])).username}: ${req.premium}\`\`\``);
+    
 
     if(typeof params.args[1] != "boolean") return params.msg.channel.send('```The only two allowed inputs for premium status are "true" or "false" ```');
     await Guild.findOneAndUpdate({ id: String(params.args[0]) }, { $set: { premium: params.args[1] } }, { new: true });
@@ -314,7 +340,7 @@ export const avatar: MachinaFunction = machinaDecoratorInfo
 export const invite: MachinaFunction = machinaDecoratorInfo
 ({monikers: ["invite"], description: "sends bot invite link"})
 ("webhook-commands", "invite", async (params: MachinaFunctionParameters) => {
-    const link = await params.Bot.client.generateInvite({ permissions: "ADMINISTRATOR"});
+    const link = await params.Bot.client.generateInvite({ permissions: ["ADD_REACTIONS", "VIEW_CHANNEL", "SEND_MESSAGES", "MANAGE_MESSAGES", "MANAGE_WEBHOOKS", "USE_EXTERNAL_EMOJIS"]});
     const embed = new MessageEmbed({
         color: params.msg.member.displayHexColor,
         description: 'do "wb donate" for premium features!',
