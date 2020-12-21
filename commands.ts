@@ -91,7 +91,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
             if(!req) return params.msg.channel.send("```Could not find the persona```")
             const collector = params.msg.channel.createMessageCollector(m => m.author == params.msg.author);
             params.msg.channel.send("```The bot will now begin relaying your messages ```").then(m => {
-                
+                m.delete();
             });
             params.msg.delete();
             let count = 0;
@@ -100,7 +100,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
                 clearTimeout(myTimer)
                 count++;
                 myTimer = setTimeout(() => count = 0, 3000)
-                if(count>4) return console.log(`Ignored "${message.content}"`);
+                if(count>4 || message.content.startsWith('wb ')) return console.log(`Ignored "${message.content}"`);
                 if(message.content == 'stop')   return collector.stop();
                 let hook = (await message.guild.fetchWebhooks()).find(w => w.owner == params.Bot.client.user);
                 await hook.edit({ channel: message.channel.id }).then(w => w.send(message.content, { username: req.name, avatarURL: req.image, files: message.attachments.array() }));
@@ -254,7 +254,7 @@ export const random: MachinaFunction = machinaDecoratorInfo
 });
 
 export const mimic: MachinaFunction = machinaDecoratorInfo
-({monikers: ["mimic"], description: "allows user to set whether or not they can be mimicked"})
+({monikers: ["mimicToggle"], description: "allows user to set whether or not they can be mimicked"})
 ("webhook-commands", "mimic", async (params: MachinaFunctionParameters) => {
     let req = await Guild.findOne({ id: params.msg.author.id })
     if(req == null) {
@@ -366,7 +366,7 @@ export const help: MachinaFunction = machinaDecoratorInfo
             title: "Commands",
             description: 'Inventory Commands\nPrefix: "wb "',
             fields: [
-                {name: "Inventory", value: 'Usage: i\nExample: "wb i"\nDescription: will display your inventory of Personas\nMonikers: "inv", "inventory"'},
+                {name: "Inventory", value: ''},
                 {name: "Add", value: 'Usage: i add {name of new Persona} {image or link}\nExample: "wb i add denton https://i.imgur.com/8zHiOK2.jpeg"\nDescription: will create a Persona with the name and pfp provided.'},
                 {name: "Remove", value: 'Usage: i remove {name of Persona}\nExample: "wb i remove denton"\nDescription: will remove the Persona with the provided name from your inventory\nMonikers: "r"'},
                 {name: "Use", value: 'Usage: i {name or number of Persona} {message}\nExample: "wb i denton hello!!"\nDescription: will send your message as the chosen persona'},
@@ -380,7 +380,7 @@ export const help: MachinaFunction = machinaDecoratorInfo
             fields: [
                 {name: "Mimic", value: 'Usage: {username, mention or "wb"} {message or nothing for random}\nExample: "wb ravenr hello! im ravenr!"\nDescription: will send a provided message (random if not provided) using a webhook with the name and pfp of a given member'},
                 {name: "Random", value: 'Usage: random {message or nothing for random}\nExample: "wb random hahahahah im so cool"\nDescription: will pick a random person in the server and send a given message as them\nMonikers: "rand"'},
-                {name: "Relay", value: 'Usage: mimic {true or false or nothing to check status}\nExample: "wb mimic false"\nDescription: set whether or not you want others to be able to mimic you'},
+                {name: "mimicToggle", value: 'Usage: mimic {true or false or nothing to check status}\nExample: "wb mimic false"\nDescription: set whether or not you want others to be able to mimic you'},
                 {name: "Invite", value: 'Usage: wb invite\nExample: "wb invite"\nDescription: generates a link to add the bot to a different server'},
                 {name: "Avatar", value: 'Usage: avatar {username or mention}\nExample: "wb avatar ravenr"\nDescription: sends the avatar of the provided user'},
                 {name: "Donate", value: 'Usage: donate\nExample: "wb donate"\nDescription: information about premium features'},
