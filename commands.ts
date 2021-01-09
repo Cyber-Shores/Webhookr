@@ -43,7 +43,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
             if(req) {
                 return params.msg.channel.send("```Oops! this Persona already exists!```")
             }
-            let doc: Document;
+            let doc: { save: () => any; name: any; image: any; };
             if(params.args.join(' ').length > 32) return params.msg.channel.send('```oops! that name is too long, personas ```');
             if(params.msg.attachments.size != 0) {
                 doc = new Persona({ id: params.msg.author.id, name: params.args.join(' '), image: params.msg.attachments.array()[0].url });
@@ -88,16 +88,22 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
         ("webhook-commands", "start", async (params: MachinaFunctionParameters) => {
             if(params.args[0] == undefined) return params.msg.channel.send("```Please specify a persona```");
             let req = await Persona.findOne({ id: params.msg.author.id, name: params.args.join(' ') });
-            if(!req) return params.msg.channel.send("```Could not find the persona```")
+            if(!req) {
+                let personas = []
+                await Persona.find({ id: params.msg.author.id }).then(p => p.forEach(doc => {
+                    personas.push(doc)
+                }));
+                if(!personas[(params.args[0] as number)-1]) return params.msg.channel.send("Could not find the persona");
+                req = personas[(params.args[0] as number)-1];
+            }
             const collector = params.msg.channel.createMessageCollector(m => m.author == params.msg.author);
-            params.msg.channel.send("```The bot will now begin relaying your messages ```").then(m => {
-                m.delete();
-            });
+            let m = await params.msg.channel.send("```The bot will now begin relaying your messages ```")
+            setTimeout(() => m.delete(), 2000)
             params.msg.delete();
             let count = 0;
-            let myTimer;
+            let myTimer: NodeJS.Timeout;
             collector.on('collect', async message => {
-                clearTimeout(myTimer)
+                clearTimeout(myTimer);
                 count++;
                 myTimer = setTimeout(() => count = 0, 3000)
                 if(count>4 || message.content.startsWith('wb ')) return console.log(`Ignored "${message.content}"`);
@@ -366,7 +372,7 @@ export const help: MachinaFunction = machinaDecoratorInfo
             title: "Commands",
             description: 'Inventory Commands\nPrefix: "wb "',
             fields: [
-                {name: "Inventory", value: ''},
+                {name: "Inventory", value: 'wb i'},
                 {name: "Add", value: 'Usage: i add {name of new Persona} {image or link}\nExample: "wb i add denton https://i.imgur.com/8zHiOK2.jpeg"\nDescription: will create a Persona with the name and pfp provided.'},
                 {name: "Remove", value: 'Usage: i remove {name of Persona}\nExample: "wb i remove denton"\nDescription: will remove the Persona with the provided name from your inventory\nMonikers: "r"'},
                 {name: "Use", value: 'Usage: i {name or number of Persona} {message}\nExample: "wb i denton hello!!"\nDescription: will send your message as the chosen persona'},
