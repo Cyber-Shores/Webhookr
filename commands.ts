@@ -275,14 +275,14 @@ export const mimic: MachinaFunction = machinaDecoratorInfo
     }
     if(!req.premium) return params.msg.channel.send('``` oops, sorry, this is a premium only feature! ```');
     if(typeof params.args[0] != "boolean") return params.msg.channel.send('```The only two allowed inputs for preferences are "true" or "false" ```')
-    var prefrence = params.args[0]
+    var preference = params.args[0]
     if(req == null) {
-        const doc = new Guild({ id: params.msg.author.id, mimickable: prefrence });
+        const doc = new Guild({ id: params.msg.author.id, mimickable: preference });
         await doc.save();
         return params.msg.channel.send("```Your document has been updated!```")
     }else{
-        await Guild.findOneAndUpdate({ id: params.msg.author.id }, { $set: { mimickable: prefrence } }, { new: true });
-        return params.msg.channel.send(`\`\`\`Prefrence updated to: ${prefrence}\`\`\``);
+        await Guild.findOneAndUpdate({ id: params.msg.author.id }, { $set: { mimickable: preference } }, { new: true });
+        return params.msg.channel.send(`\`\`\`preference updated to: ${preference}\`\`\``);
     }
 });
 
@@ -372,11 +372,11 @@ export const help: MachinaFunction = machinaDecoratorInfo
             title: "Commands",
             description: 'Inventory Commands\nPrefix: "wb "',
             fields: [
-                {name: "Inventory", value: 'wb i'},
+                {name: "Inventory", value: 'Usage: i\nExample: "wb i"\nDescription: Displays a menu containing your saved personas. Donate to unlock unlimited storage!'},
                 {name: "Add", value: 'Usage: i add {name of new Persona} {image or link}\nExample: "wb i add denton https://i.imgur.com/8zHiOK2.jpeg"\nDescription: will create a Persona with the name and pfp provided.'},
                 {name: "Remove", value: 'Usage: i remove {name of Persona}\nExample: "wb i remove denton"\nDescription: will remove the Persona with the provided name from your inventory\nMonikers: "r"'},
-                {name: "Use", value: 'Usage: i {name or number of Persona} {message}\nExample: "wb i denton hello!!"\nDescription: will send your message as the chosen persona'},
-                {name: "Relay", value: 'Usage: i start {Persona to be used}\nExample: "wb i start denton"\nDescription: whenever you send a message in this channel, the bot will delete it and resend it as the provided Persona'},
+                {name: "Use", value: 'Usage: i {name or number of Persona} -m {message}\nExample: "wb i denton -m hello!!"\nDescription: will send your message as the chosen persona'},
+                {name: "Relay", value: 'Usage: i start {name or number of Persona to be used}\nExample: "wb i start denton"\nDescription: whenever you send a message in this channel, the bot will delete it and resend it as the provided Persona'},
             ],
             color: params.msg.member.displayHexColor
         }),
@@ -386,7 +386,7 @@ export const help: MachinaFunction = machinaDecoratorInfo
             fields: [
                 {name: "Mimic", value: 'Usage: {username, mention or "wb"} {message or nothing for random}\nExample: "wb ravenr hello! im ravenr!"\nDescription: will send a provided message (random if not provided) using a webhook with the name and pfp of a given member'},
                 {name: "Random", value: 'Usage: random {message or nothing for random}\nExample: "wb random hahahahah im so cool"\nDescription: will pick a random person in the server and send a given message as them\nMonikers: "rand"'},
-                {name: "mimicToggle", value: 'Usage: mimic {true or false or nothing to check status}\nExample: "wb mimic false"\nDescription: set whether or not you want others to be able to mimic you'},
+                {name: "Toggle Mimic", value: 'Usage: mimicToggle {true or false or nothing to check status}\nExample: "wb mimicToggle false"\nDescription: set whether or not you want others to be able to mimic you'},
                 {name: "Invite", value: 'Usage: wb invite\nExample: "wb invite"\nDescription: generates a link to add the bot to a different server'},
                 {name: "Avatar", value: 'Usage: avatar {username or mention}\nExample: "wb avatar ravenr"\nDescription: sends the avatar of the provided user'},
                 {name: "Donate", value: 'Usage: donate\nExample: "wb donate"\nDescription: information about premium features'},
