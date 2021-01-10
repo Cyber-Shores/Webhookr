@@ -111,7 +111,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
                 clearTimeout(myTimer);
                 count++;
                 myTimer = setTimeout(() => count = 0, 3000)
-                if(count>4 || message.content.startsWith('wb ')) return console.log(`Ignored "${message.content}"`);
+                if(count>4 || message.content.startsWith('wb ')) return /* console.log(`Ignored "${message.content}"`); */
                 if(message.content == 'stop')   return collector.stop();
                 let hook = (await message.guild.fetchWebhooks()).find(w => w.owner == params.Bot.client.user);
                 await hook.edit({ channel: message.channel.id }).then(w => w.send(message.content, { username: req.name, avatarURL: req.image, files: message.attachments.array() }));
