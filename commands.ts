@@ -44,15 +44,18 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
                 return params.msg.channel.send("```Oops! this Persona already exists!```")
             }
             let doc: { save: () => any; name: any; image: any; };
-            if(params.args.join(' ').length > 32) return params.msg.channel.send('```oops! that name is too long, personas ```');
+            
             if(params.msg.attachments.size != 0) {
+                if(params.args.join(' ').length > 32) return params.msg.channel.send('```oops! that name is too long, personas must have a name fewer than 32 characters```');
                 doc = new Persona({ id: params.msg.author.id, name: params.args.join(' '), image: params.msg.attachments.array()[0].url });
                 await doc.save();
             } else if (validURL(params.args[params.args.length-1])) {
                 const url = params.args.pop();
+                if(params.args.join(' ').length > 32) return params.msg.channel.send('```oops! that name is too long, personas must have a name fewer than 32 characters```');
                 doc = new Persona({ id: params.msg.author.id, name: params.args.join(' '), image: url });
                 await doc.save();
             } else {
+                if(params.args.join(' ').length > 32) return params.msg.channel.send('```oops! that name is too long, personas must have a name fewer than 32 characters```');
                 let m = await params.msg.channel.send("```Please send the link or image that should be the profile pic for this persona```");
 
                 await params.msg.channel.awaitMessages(m => m.author == params.msg.author && (m.attachments.size != 0 || validURL(m.content)), { max: 1, time: 60000, errors: ['time'] })
@@ -376,7 +379,7 @@ export const help: MachinaFunction = machinaDecoratorInfo
                 {name: "Add", value: 'Usage: i add {name of new Persona} {image or link}\nExample: "wb i add denton https://i.imgur.com/8zHiOK2.jpeg"\nDescription: will create a Persona with the name and pfp provided.'},
                 {name: "Remove", value: 'Usage: i remove {name of Persona}\nExample: "wb i remove denton"\nDescription: will remove the Persona with the provided name from your inventory\nMonikers: "r"'},
                 {name: "Use", value: 'Usage: i {name or number of Persona} -m {message}\nExample: "wb i denton -m hello!!"\nDescription: will send your message as the chosen persona'},
-                {name: "Relay", value: 'Usage: i start {name or number of Persona to be used}\nExample: "wb i start denton"\nDescription: whenever you send a message in this channel, the bot will delete it and resend it as the provided Persona'},
+                {name: "Relay", value: 'Usage: i start {name or number of Persona to be used}\nExample: "wb i start denton"\nDescription: whenever you send a message in this channel, the bot will delete it and resend it as the provided Persona. Use "wb stop" to end the relay'},
             ],
             color: params.msg.member.displayHexColor
         }),
