@@ -24,11 +24,11 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
     [
         machinaDecoratorInfo({monikers: ["remove", "r"], description: "removes a webhook from users inventory"})
         ("webhook-commands", "remove", async (params: MachinaFunctionParameters) => {
-            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args.join(' ') });
+            let req = await Persona.findOne({ id: params.msg.author.id, finder: params.args.join(' ').toLowerCase() });
             if(!req) {
                 return params.msg.channel.send("```Could not find that persona.```")
             }
-            Persona.deleteOne({ id: params.msg.author.id, name: params.args.join(' ') }, function (err: any) {
+            Persona.deleteOne({ id: params.msg.author.id, finder: params.args.join(' ').toLowerCase() }, function (err: any) {
                 if(err) params.msg.channel.send("```Oops! Error occured persona could not be deleted.```");
                 return params.msg.channel.send("```Successfuly deleted!```")
             })
@@ -39,23 +39,25 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
             let prem = await Guild.findOne({ id: params.msg.author.id })
             if(personaList.length >= 3 && !prem.premium) return params.msg.channel.send('```oops, sorry, you need premium in order to store more than 3 personas!```', { files: [ "https://i.imgur.com/Y0bVdO4.jpg" ] });
             if(params.args[0] == undefined) return params.msg.channel.send('```ERROR: Persona must have a name```');
-            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args.join(' ') });
+            let url = undefined;
+            if(validURL(params.args[params.args.length-1])) {
+                url = params.args.pop();
+            }
+            if(params.args.join(' ').length > 32) return params.msg.channel.send('```oops! that name is too long, personas must have a name fewer than 32 characters```');
+            let req = await Persona.findOne({ id: params.msg.author.id, finder: params.args.join(' ').toLowerCase() });
             if(req) {
                 return params.msg.channel.send("```Oops! this Persona already exists!```")
             }
-            let doc: { save: () => any; name: any; image: any; };
+            let doc;
             
             if(params.msg.attachments.size != 0) {
-                if(params.args.join(' ').length > 32) return params.msg.channel.send('```oops! that name is too long, personas must have a name fewer than 32 characters```');
-                doc = new Persona({ id: params.msg.author.id, name: params.args.join(' '), image: params.msg.attachments.array()[0].url });
+                
+                doc = new Persona({ id: params.msg.author.id, name: params.args.join(' '), finder: params.args.join(' ').toLowerCase(), image: params.msg.attachments.array()[0].url });
                 await doc.save();
-            } else if (validURL(params.args[params.args.length-1])) {
-                const url = params.args.pop();
-                if(params.args.join(' ').length > 32) return params.msg.channel.send('```oops! that name is too long, personas must have a name fewer than 32 characters```');
-                doc = new Persona({ id: params.msg.author.id, name: params.args.join(' '), image: url });
+            } else if (url) {
+                doc = new Persona({ id: params.msg.author.id, name: params.args.join(' '), finder: params.args.join(' ').toLowerCase(), image: url });
                 await doc.save();
             } else {
-                if(params.args.join(' ').length > 32) return params.msg.channel.send('```oops! that name is too long, personas must have a name fewer than 32 characters```');
                 let m = await params.msg.channel.send("```Please send the link or image that should be the profile pic for this persona```");
 
                 await params.msg.channel.awaitMessages(m => m.author == params.msg.author && (m.attachments.size != 0 || validURL(m.content)), { max: 1, time: 60000, errors: ['time'] })
@@ -65,7 +67,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
                             link = collected.first().attachments.array()[0].url;
                         else
                             link = collected.first().content
-                        doc = new Persona({ id: params.msg.author.id, name: params.args.join(' '), image: link})
+                        doc = new Persona({ id: params.msg.author.id, name: params.args.join(' '), finder: params.args.join(' ').toLowerCase(), image: link})
                         let mNew = await m.edit("```Recieved!```");
                         await doc.save();
                         setTimeout(() => { mNew.delete() }, 5000);
@@ -90,7 +92,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
         machinaDecoratorInfo({monikers: ["start", "relay"], description: "begins relaying messages as a given persona"})
         ("webhook-commands", "start", async (params: MachinaFunctionParameters) => {
             if(params.args[0] == undefined) return params.msg.channel.send("```Please specify a persona```");
-            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args.join(' ') });
+            let req = await Persona.findOne({ id: params.msg.author.id, finder: params.args.join(' ').toLowerCase() });
             if(!req) {
                 let personas = []
                 await Persona.find({ id: params.msg.author.id }).then(p => p.forEach(doc => {
@@ -201,7 +203,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
 
         const flagIndex = params.args.indexOf('-m');
         if(flagIndex == -1) {
-            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args.join(' ') });
+            let req = await Persona.findOne({ id: params.msg.author.id, finder: params.args.join(' ').toLowerCase() });
             if(!req) {
                 let personas = []
                 await Persona.find({ id: params.msg.author.id }).then(p => p.forEach(doc => {
@@ -214,7 +216,7 @@ export const inventory: MachinaFunction = machinaDecoratorInfo
             await hook.edit({ channel: params.msg.channel.id }).then(w => w.send({ username: req.name, avatarURL: req.image, files: params.msg.attachments.array()}));
             params.msg.delete();
         } else {
-            let req = await Persona.findOne({ id: params.msg.author.id, name: params.args.slice(0,flagIndex).join(' ') });
+            let req = await Persona.findOne({ id: params.msg.author.id, finder: params.args.slice(0,flagIndex).join(' ').toLowerCase() });
             if(!req) {
                 let personas = []
                 await Persona.find({ id: params.msg.author.id }).then(p => p.forEach(doc => {
